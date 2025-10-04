@@ -59,7 +59,7 @@
                                    style="font-family: monospace; font-size: 0.9rem;">
                             <button class="btn btn-primary" 
                                     type="button" 
-                                    onclick="copyPixCode()">
+                                    onclick="copyPixCode(this)">
                                 <i class="fas fa-copy me-1"></i>Copiar
                             </button>
                         </div>
@@ -120,28 +120,48 @@
 </div>
 
 <script>
-function copyPixCode() {
+function copyPixCode(button) {
     const pixCode = document.getElementById('pix-code');
-    pixCode.select();
-    pixCode.setSelectionRange(0, 99999); // Para mobile
 
-    navigator.clipboard.writeText(pixCode.value).then(() => {
-        const button = event.target.closest('button');
-        const originalHTML = button.innerHTML;
+    // Tentar usar a API moderna de clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pixCode.value).then(() => {
+            showCopySuccess(button);
+        }).catch(err => {
+            console.error('Erro ao copiar com clipboard API:', err);
+            // Fallback para método antigo
+            fallbackCopyTextToClipboard(pixCode, button);
+        });
+    } else {
+        // Fallback para navegadores mais antigos
+        fallbackCopyTextToClipboard(pixCode, button);
+    }
+}
 
-        button.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-success');
+function fallbackCopyTextToClipboard(input, button) {
+    try {
+        input.select();
+        input.setSelectionRange(0, 99999); // Para mobile
+        document.execCommand('copy');
+        showCopySuccess(button);
+    } catch (err) {
+        console.error('Erro ao copiar com execCommand:', err);
+        alert('Erro ao copiar. Por favor, copie manualmente o código PIX acima.');
+    }
+}
 
-        setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-primary');
-        }, 2000);
-    }).catch(err => {
-        console.error('Erro ao copiar:', err);
-        alert('Erro ao copiar. Tente selecionar e copiar manualmente.');
-    });
+function showCopySuccess(button) {
+    const originalHTML = button.innerHTML;
+
+    button.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+    button.classList.remove('btn-primary');
+    button.classList.add('btn-success');
+
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-primary');
+    }, 2000);
 }
 
 // Verificar status do pagamento a cada 5 segundos
