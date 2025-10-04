@@ -1,0 +1,65 @@
+<!-- HTMX salon status toggle component -->
+<div class="salon-status-card" id="salon-status-card">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="salon-status-info">
+                    <h5 class="card-title mb-1">
+                        <i class="fas fa-store me-2"></i>Status do Salão
+                    </h5>
+                    {% if salon.is_temporarily_closed %}
+                        <span class="badge bg-danger fs-6 me-2 status-indicator">
+                            <i class="fas fa-times-circle me-1"></i>Fechado
+                        </span>
+                        {% if salon.closed_until %}
+                            <small class="text-muted">
+                                até {{ salon.closed_until|date:"d/m/Y H:i" }}
+                            </small>
+                        {% else %}
+                            <small class="text-muted">Fechado indefinidamente</small>
+                        {% endif %}
+                        {% if salon.closure_note %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>{{ salon.closure_note }}
+                                </small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-success fs-6 status-indicator">
+                            <i class="fas fa-check-circle me-1"></i>Aberto
+                        </span>
+                        <small class="text-muted">Aceitando agendamentos</small>
+                    {% endif %}
+                </div>
+                
+                <div class="salon-status-actions">
+                    <button type="button" 
+                            class="btn btn-outline-primary me-2"
+                            hx-get="{% url 'salons:manage_salon_status' %}"
+                            hx-target="#modal-content"
+                            data-bs-toggle="modal"
+                            data-bs-target="#dynamicModal">
+                        <i class="fas fa-cog me-2"></i>Configurar
+                    </button>
+                    
+                    <button type="button" 
+                            class="btn {% if salon.is_temporarily_closed %}btn-success{% else %}btn-warning{% endif %} status-toggle-btn"
+                            hx-post="{% url 'salons:toggle_status' %}"
+                            hx-target="#salon-status-card"
+                            hx-swap="outerHTML"
+                            hx-confirm="{% if salon.is_temporarily_closed %}Tem certeza que deseja reabrir o salão?{% else %}Tem certeza que deseja fechar temporariamente o salão?{% endif %}">
+                        {% if salon.is_temporarily_closed %}
+                            <i class="fas fa-unlock me-2"></i>Reabrir
+                        {% else %}
+                            <i class="fas fa-lock me-2"></i>Fechar
+                        {% endif %}
+                        <span class="htmx-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

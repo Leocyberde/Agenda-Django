@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: salon-booking
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn salon_booking.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.12.0

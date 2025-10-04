@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Pagamento - {{ plan.get_plan_type_display }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Finalizar Pagamento
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Detalhes do Plano</h5>
+                        <div class="p-3 bg-light rounded">
+                            <p class="mb-2"><strong>Plano:</strong> {{ plan.get_plan_type_display }}</p>
+                            <p class="mb-2"><strong>Descrição:</strong> {{ plan.description }}</p>
+                            <p class="mb-0"><strong>Valor:</strong> <span class="text-success fs-4">R$ {{ plan.price }}</span></p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Pagamento seguro via Mercado Pago</strong><br>
+                        Clique no botão abaixo para realizar o pagamento. Você será redirecionado para a página segura do Mercado Pago.
+                    </div>
+
+                    <div class="text-center">
+                        <div id="wallet_container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+    const mp = new MercadoPago('{{ mp_public_key }}');
+    
+    mp.bricks().create("wallet", "wallet_container", {
+        initialization: {
+            preferenceId: '{{ preference_id }}',
+        },
+    });
+</script>
+{% endblock %}

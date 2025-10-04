@@ -1,0 +1,446 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Meus Agendamentos - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-calendar-alt me-2"></i>Meus Agendamentos
+                </h2>
+                <p class="text-muted mb-0">{{ employee.user.get_full_name|default:employee.user.username }} - {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:employee_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Painel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Abas de Navegação -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="appointmentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {% if view_type == 'upcoming' %}active{% endif %}" 
+                           href="?view=upcoming{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}"
+                           style="{% if view_type == 'upcoming' %}background: var(--primary-gradient); color: white;{% else %}background: transparent; color: var(--text-primary);{% endif %}">
+                            <i class="fas fa-clock me-2"></i>Próximos 
+                            {% if upcoming_count %}<span class="badge bg-primary ms-1">{{ upcoming_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {% if view_type == 'history' %}active{% endif %}" 
+                           href="?view=history{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}"
+                           style="{% if view_type == 'history' %}background: var(--primary-gradient); color: white;{% else %}background: transparent; color: var(--text-primary);{% endif %}">
+                            <i class="fas fa-history me-2"></i>Histórico 
+                            {% if history_count %}<span class="badge bg-secondary ms-1">{{ history_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <input type="hidden" name="view" value="{{ view_type }}">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">Todos os status</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="date" class="form-label">Data</label>
+                        <input type="date" name="date" id="date" class="form-control" value="{{ date_filter }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="d-flex gap-2 w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i>Filtrar
+                            </button>
+                            <a href="?view={{ view_type }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Limpar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Agendamentos -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Serviço</th>
+                                    <th>Data</th>
+                                    <th>Horário</th>
+                                    <th>Status</th>
+                                    <th>Observações</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in appointments %}
+                                <tr>
+                                    <td>
+                                        <div class="mb-2">
+                                            {% if appointment.status == 'confirmed' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>{{ appointment.get_status_display }}
+                                                </span>
+                                            {% elif appointment.status == 'scheduled' %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-clock me-1"></i>{{ appointment.get_status_display }}
+                                                </span>
+                                            {% elif appointment.status == 'completed' %}
+                                                <span class="badge bg-primary">
+                                                    <i class="fas fa-check-circle me-1"></i>{{ appointment.get_status_display }}
+                                                </span>
+                                            {% elif appointment.status == 'cancelled' %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>{{ appointment.get_status_display }}
+                                                </span>
+                                            {% elif appointment.status == 'rescheduled' %}
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-calendar-alt me-1"></i>{{ appointment.get_status_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-question me-1"></i>{{ appointment.get_status_display }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <strong>{{ appointment.client.get_full_name|default:appointment.client.username }}</strong><br>
+                                        <small class="text-muted">{{ appointment.client.email }}</small><br>
+                                        <small class="text-info">
+                                            <i class="fas fa-plus-circle me-1"></i>Criado: {{ appointment.created_at|date:'d/m/Y H:i' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ appointment.service.name }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ appointment.service.duration }} min - R$ {{ appointment.service.price }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ appointment.appointment_date|date:'d/m/Y' }}</strong><br>
+                                        <small class="text-muted">
+                                            {% if appointment.appointment_date == today %}
+                                                <i class="fas fa-calendar-day text-success"></i> Hoje
+                                            {% elif appointment.appointment_date > today %}
+                                                <i class="fas fa-calendar-plus text-primary"></i> Futuro
+                                            {% else %}
+                                                <i class="fas fa-calendar-minus text-secondary"></i> Passado
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ appointment.appointment_time|time:'H:i' }} - {{ appointment.get_end_time|time:'H:i' }}</strong><br>
+                                        <small class="text-muted">{{ appointment.service.duration }} minutos</small>
+                                    </td>
+                                    <td>
+                                        {% if appointment.status == 'confirmed' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>{{ appointment.get_status_display }}
+                                            </span>
+                                        {% elif appointment.status == 'scheduled' %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-clock me-1"></i>{{ appointment.get_status_display }}
+                                            </span>
+                                            <br><small class="text-warning">Aguardando confirmação</small>
+                                        {% elif appointment.status == 'completed' %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-check-circle me-1"></i>{{ appointment.get_status_display }}
+                                            </span>
+                                        {% elif appointment.status == 'cancelled' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i>{{ appointment.get_status_display }}
+                                            </span>
+                                        {% elif appointment.status == 'rescheduled' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-calendar-alt me-1"></i>{{ appointment.get_status_display }}
+                                            </span>
+                                            {% if appointment.rescheduled_date %}
+                                                <br><small class="text-info">Nova data: {{ appointment.rescheduled_date|date:'d/m/Y' }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-question me-1"></i>{{ appointment.get_status_display }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if appointment.notes %}
+                                            <small>{{ appointment.notes|truncatewords:5 }}</small>
+                                        {% else %}
+                                            <small class="text-muted">Sem observações</small>
+                                        {% endif %}
+                                        {% if appointment.rescheduled_reason %}
+                                            <br><small class="text-info"><strong>Reagendamento:</strong> {{ appointment.rescheduled_reason|truncatewords:3 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if appointment.status == 'scheduled' %}
+                                                <form method="post" action="{% url 'salons:employee_manage_appointment' appointment.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="confirm">
+                                                    <button type="submit" class="btn btn-outline-success" title="Confirmar">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+
+                                            {% if appointment.appointment_date >= today and appointment.status == 'scheduled' or appointment.appointment_date >= today and appointment.status == 'confirmed' %}
+                                                <button class="btn btn-outline-primary btn-sm reschedule-btn" title="Reagendar" 
+                                                        data-appointment-id="{{ appointment.id }}"
+                                                        data-appointment-date="{{ appointment.appointment_date|date:'Y-m-d' }}"
+                                                        data-appointment-time="{{ appointment.appointment_time|time:'H:i' }}"
+                                                        data-client-name="{{ appointment.client.get_full_name|default:appointment.client.username }}"
+                                                        data-service-name="{{ appointment.service.name }}"
+                                                        data-action-url="{% url 'salons:employee_manage_appointment' appointment.id %}">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                </button>
+                                            {% endif %}
+
+                                            {% if appointment.status == 'scheduled' or appointment.status == 'confirmed' %}
+                                                <form method="post" action="{% url 'salons:employee_manage_appointment' appointment.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="complete">
+                                                    <button type="submit" class="btn btn-outline-primary" title="Marcar como concluído">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+
+                                            {% if appointment.status != 'cancelled' and appointment.status != 'completed' %}
+                                                <form method="post" action="{% url 'salons:employee_manage_appointment' appointment.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="cancel">
+                                                    <button type="submit" class="btn btn-outline-warning" title="Cancelar"
+                                                            onclick="return confirm('Tem certeza que deseja cancelar este agendamento?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times display-4 text-muted mb-3"></i>
+                        {% if status_filter or date_filter %}
+                            <h5 class="text-muted">Nenhum agendamento encontrado</h5>
+                            <p class="text-muted mb-4">Tente ajustar os filtros para ver mais resultados</p>
+                            <a href="{% url 'salons:employee_appointments' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-times me-2"></i>Limpar Filtros
+                            </a>
+                        {% else %}
+                            <h5 class="text-muted">Nenhum agendamento ainda</h5>
+                            <p class="text-muted">Seus agendamentos aparecerão aqui quando forem criados</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Único de Reagendamento -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reagendar Agendamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="rescheduleForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reschedule">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Agendamento Atual:</strong></label>
+                        <div class="p-2 bg-light rounded">
+                            <small class="text-muted d-block" id="currentAppointmentInfo"></small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nova Data</label>
+                        <input type="date" name="rescheduled_date" class="form-control" 
+                               min="{{ today|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Novo Horário</label>
+                        <input type="time" name="rescheduled_time" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo</label>
+                        <textarea name="rescheduled_reason" class="form-control" rows="3" 
+                                  placeholder="Motivo do reagendamento..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Propor Reagendamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Fix para abas no tema escuro */
+[data-theme="dark"] .nav-tabs .nav-link {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .nav-tabs .nav-link.active {
+    background: var(--primary-gradient) !important;
+    color: #ffffff !important;
+    border-color: rgba(102, 126, 234, 0.5) !important;
+}
+
+[data-theme="dark"] .nav-tabs .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Melhorar visibilidade dos badges no tema escuro */
+[data-theme="dark"] .badge {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .text-info {
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .text-warning {
+    color: #fbbf24 !important;
+}
+
+/* Estilos para melhorar a tabela no tema escuro */
+[data-theme="dark"] .table th {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .table td {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rescheduleModal = document.getElementById('rescheduleModal');
+    const rescheduleForm = document.getElementById('rescheduleForm');
+    const currentAppointmentInfo = document.getElementById('currentAppointmentInfo');
+    const modalInstance = new bootstrap.Modal(rescheduleModal);
+
+    // Event listeners para botões de reagendamento
+    document.querySelectorAll('.reschedule-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const appointmentId = this.dataset.appointmentId;
+            const appointmentDate = this.dataset.appointmentDate;
+            const appointmentTime = this.dataset.appointmentTime;
+            const clientName = this.dataset.clientName;
+            const serviceName = this.dataset.serviceName;
+
+            // Limpar formulário
+            rescheduleForm.reset();
+            
+            // Definir ação do formulário usando URL robusta
+            rescheduleForm.action = this.dataset.actionUrl;
+            
+            // Mostrar informações do agendamento atual (usando textContent para segurança)
+            currentAppointmentInfo.innerHTML = '';
+            
+            const clientInfo = document.createElement('div');
+            clientInfo.innerHTML = '<strong>Cliente:</strong> ';
+            clientInfo.appendChild(document.createTextNode(clientName));
+            
+            const serviceInfo = document.createElement('div');
+            serviceInfo.innerHTML = '<strong>Serviço:</strong> ';
+            serviceInfo.appendChild(document.createTextNode(serviceName));
+            
+            const dateInfo = document.createElement('div');
+            dateInfo.innerHTML = '<strong>Data/Hora atual:</strong> ';
+            dateInfo.appendChild(document.createTextNode(`${formatDate(appointmentDate)} às ${appointmentTime}`));
+            
+            currentAppointmentInfo.appendChild(clientInfo);
+            currentAppointmentInfo.appendChild(serviceInfo);
+            currentAppointmentInfo.appendChild(dateInfo);
+
+            // Abrir modal
+            modalInstance.show();
+        });
+    });
+
+    // Event listener para quando o modal é fechado
+    rescheduleModal.addEventListener('hidden.bs.modal', function() {
+        rescheduleForm.reset();
+        currentAppointmentInfo.innerHTML = '';
+        rescheduleForm.action = '';
+    });
+
+    // Event listener para quando o modal é mostrado
+    rescheduleModal.addEventListener('shown.bs.modal', function() {
+        const dateInput = rescheduleModal.querySelector('input[type="date"]');
+        if (dateInput) {
+            dateInput.focus();
+        }
+    });
+
+    // Função auxiliar para formatar data
+    function formatDate(dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    // Garantir que apenas um modal esteja aberto (preventivo)
+    document.addEventListener('show.bs.modal', function(e) {
+        document.querySelectorAll('.modal.show').forEach(function(openModal) {
+            if (openModal !== e.target) {
+                const instance = bootstrap.Modal.getInstance(openModal);
+                if (instance) {
+                    instance.hide();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

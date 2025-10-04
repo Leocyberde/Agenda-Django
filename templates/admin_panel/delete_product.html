@@ -1,0 +1,108 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Excluir Produto - Painel Administrativo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-trash-alt me-2 text-danger"></i>Excluir Produto</h2>
+    <a href="{% url 'admin_panel:manage_products' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card admin-card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Exclusão</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita. O produto será removido permanentemente do sistema.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="img-fluid rounded" alt="{{ product.name }}">
+                        {% else %}
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-image text-muted fa-3x"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <h4>{{ product.name }}</h4>
+                        <p class="text-muted mb-2">
+                            <strong>Marca:</strong> {{ product.brand }}<br>
+                            <strong>Categoria:</strong> {{ product.get_category_display }}<br>
+                            <strong>Preço:</strong> {{ product.price_formatted }}
+                        </p>
+                        
+                        <p class="mb-3">{{ product.description|truncatechars:150 }}</p>
+                        
+                        <div class="mb-3">
+                            {% if product.is_featured %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-star"></i> Produto em Destaque
+                                </span>
+                            {% endif %}
+                            {% if product.is_active %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </div>
+                        
+                        <p class="small text-muted">
+                            <strong>Criado em:</strong> {{ product.created_at|date:"d/m/Y H:i" }}<br>
+                            <strong>Última atualização:</strong> {{ product.updated_at|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0 text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Tem certeza que deseja excluir este produto?
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'admin_panel:manage_products' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <a href="{% url 'admin_panel:edit_product' product.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>Editar ao Invés de Excluir
+                        </a>
+                        <form method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')">
+                                <i class="fas fa-trash me-2"></i>Sim, Excluir Produto
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card admin-card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Alternativas</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">Em vez de excluir o produto, você pode:</p>
+                <ul class="mb-0">
+                    <li><strong>Desativar o produto:</strong> Ele não aparecerá para os comerciantes, mas os dados serão preservados</li>
+                    <li><strong>Remover do destaque:</strong> O produto continuará disponível, mas não será priorizado</li>
+                    <li><strong>Editar as informações:</strong> Atualize o produto com novas informações ou link de afiliado</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

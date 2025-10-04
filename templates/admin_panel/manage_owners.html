@@ -1,0 +1,133 @@
+
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Gerenciar Comerciantes{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-users me-2"></i>Gerenciar Comerciantes
+            </h2>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card admin-card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" name="search" id="search" class="form-control" 
+                               value="{{ search }}" placeholder="Nome ou email...">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status da Assinatura</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Ativas</option>
+                            <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expiradas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                        <a href="{% url 'admin_panel:manage_owners' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Comerciantes -->
+        <div class="card admin-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Comerciantes ({{ owners.count }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if owners %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Comerciante</th>
+                                    <th>Email</th>
+                                    <th>Salão</th>
+                                    <th>Assinatura</th>
+                                    <th>Status</th>
+                                    <th>Cadastro</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for owner in owners %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ owner.user.first_name }} {{ owner.user.last_name }}</strong>
+                                                {% if owner.phone %}
+                                                    <br><small class="text-muted">{{ owner.phone }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>{{ owner.user.email }}</td>
+                                        <td>
+                                            {% if owner.user.salon %}
+                                                {{ owner.user.salon.name }}
+                                                <br><small class="text-muted">{{ owner.user.salon.city }}, {{ owner.user.salon.state }}</small>
+                                            {% else %}
+                                                <span class="text-muted">Não cadastrado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if owner.user.subscription %}
+                                                {{ owner.user.subscription.get_plan_type_display }}
+                                                <br><small class="text-muted">{{ owner.user.subscription.days_remaining }} dias restantes</small>
+                                            {% else %}
+                                                <span class="text-muted">Sem assinatura</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if owner.user.subscription and owner.user.subscription.is_active %}
+                                                <span class="badge bg-success">Ativa</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Expirada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ owner.created_at|date:"d/m/Y" }}
+                                            <br><small class="text-muted">{{ owner.created_at|time:"H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'admin_panel:owner_detail' owner.id %}" 
+                                                   class="btn btn-outline-primary" title="Ver detalhes">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'admin_panel:manage_subscription' owner.id %}" 
+                                                   class="btn btn-outline-warning" title="Gerenciar assinatura">
+                                                    <i class="fas fa-crown"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-times display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum comerciante encontrado</h5>
+                        <p class="text-muted">Tente ajustar os filtros de busca</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

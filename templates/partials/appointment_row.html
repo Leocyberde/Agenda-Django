@@ -1,0 +1,72 @@
+<!-- Partial template for appointment row with HTMX actions -->
+<tr class="appointment-row" data-appointment-id="{{ appointment.id }}">
+    <td>
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+                <div class="avatar-sm bg-{{ appointment.status_color }} text-white rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="fas fa-{{ appointment.status_icon }}"></i>
+                </div>
+            </div>
+            <div class="ms-3">
+                <h6 class="mb-0">{{ appointment.client_name }}</h6>
+                <small class="text-muted">{{ appointment.client_email }}</small>
+            </div>
+        </div>
+    </td>
+    <td>
+        <div>
+            <strong>{{ appointment.service.name }}</strong><br>
+            <small class="text-muted">{{ appointment.employee.user.first_name }}</small>
+        </div>
+    </td>
+    <td>
+        <div>
+            {{ appointment.date|date:"d/m/Y" }}<br>
+            <small class="text-muted">{{ appointment.time }}</small>
+        </div>
+    </td>
+    <td>
+        <span class="badge bg-{{ appointment.status_color }} status-badge">
+            <i class="fas fa-{{ appointment.status_icon }} me-1"></i>
+            {{ appointment.get_status_display }}
+        </span>
+    </td>
+    <td class="text-end">
+        <div class="btn-group" role="group">
+            {% if appointment.status == 'scheduled' %}
+                <button class="btn btn-sm btn-outline-success" 
+                        hx-post="{% url 'appointments:confirm' appointment.id %}"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        data-bs-toggle="tooltip" 
+                        title="Confirmar">
+                    <i class="fas fa-check htmx-indicator"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" 
+                        hx-post="{% url 'appointments:reschedule' appointment.id %}"
+                        hx-target="#modal-content"
+                        hx-trigger="click"
+                        data-bs-toggle="modal"
+                        data-bs-target="#dynamicModal"
+                        title="Reagendar">
+                    <i class="fas fa-calendar-alt htmx-indicator"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" 
+                        hx-post="{% url 'appointments:cancel' appointment.id %}"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        hx-confirm="Tem certeza que deseja cancelar este agendamento?"
+                        title="Cancelar">
+                    <i class="fas fa-times htmx-indicator"></i>
+                </button>
+            {% endif %}
+            <button class="btn btn-sm btn-outline-primary" 
+                    hx-get="{% url 'appointments:detail' appointment.id %}"
+                    hx-target="#appointment-detail"
+                    hx-trigger="click"
+                    title="Ver detalhes">
+                <i class="fas fa-eye htmx-indicator"></i>
+            </button>
+        </div>
+    </td>
+</tr>

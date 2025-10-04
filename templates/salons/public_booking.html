@@ -1,0 +1,318 @@
+{% extends 'base/public_base.html' %}
+
+{% block title %}Agendamento - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<!-- Messages -->
+{% if messages %}
+    <div class="p-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Cabeçalho do Salão -->
+<div class="salon-header">
+    <h1>{{ salon.name }}</h1>
+    <p>
+        <i class="fas fa-map-marker-alt me-2"></i>{{ salon.address }}, {{ salon.city }} - {{ salon.state }}
+    </p>
+    <p>
+        <i class="fas fa-phone me-2"></i>{{ salon.phone }} | 
+        <i class="fas fa-envelope me-2"></i>{{ salon.email }}
+    </p>
+</div>
+
+<!-- Conteúdo do Agendamento -->
+<div class="booking-content">
+    <form method="post" id="bookingForm" novalidate>
+        {% csrf_token %}
+        
+        <!-- Dados do Cliente -->
+        <div class="mb-4">
+            <h4 class="section-title">
+                <i class="fas fa-user me-2"></i>Seus Dados
+            </h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nome Completo *</label>
+                    <input type="text" name="client_name" class="form-control" required placeholder="Digite seu nome completo">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Email *</label>
+                    <input type="email" name="client_email" class="form-control" required placeholder="seu@email.com">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Telefone</label>
+                    <input type="tel" name="client_phone" class="form-control" placeholder="(11) 99999-9999">
+                </div>
+            </div>
+        </div>
+
+        <!-- Seleção de Serviço -->
+        <div class="mb-4">
+            <h4 class="section-title">
+                <i class="fas fa-list me-2"></i>Escolha o Serviço
+            </h4>
+            {% if services %}
+                <div class="row">
+                    {% for service in services %}
+                        <div class="col-12 mb-3">
+                            <div class="service-card" onclick="selectService('{{ service.id }}')">
+                                <div class="form-check">
+                                    <input type="radio" name="service_id" value="{{ service.id }}" 
+                                           class="form-check-input" id="service_{{ service.id }}" required>
+                                    <label class="form-check-label w-100" for="service_{{ service.id }}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h5 class="mb-1">{{ service.name }}</h5>
+                                                {% if service.description %}
+                                                    <p class="text-muted mb-0">{{ service.description }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="text-primary fw-bold fs-5">R$ {{ service.price }}</div>
+                                                <small class="text-muted">{{ service.duration }} minutos</small>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Nenhum serviço disponível no momento.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Seleção de Profissional -->
+        <div class="mb-4">
+            <h4 class="section-title">
+                <i class="fas fa-user-tie me-2"></i>Escolha o Profissional (Opcional)
+            </h4>
+            {% if employees %}
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="professional-card" onclick="selectProfessional('')">
+                            <div class="form-check">
+                                <input type="radio" name="employee_id" value="" 
+                                       class="form-check-input" id="employee_any" checked>
+                                <label class="form-check-label w-100" for="employee_any">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas fa-users text-primary fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">Qualquer profissional disponível</h5>
+                                            <p class="text-muted mb-0">Deixe que escolhemos o melhor profissional para você</p>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    {% for employee in employees %}
+                        <div class="col-12 mb-3">
+                            <div class="professional-card" onclick="selectProfessional('{{ employee.id }}')">
+                                <div class="form-check">
+                                    <input type="radio" name="employee_id" value="{{ employee.id }}" 
+                                           class="form-check-input" id="employee_{{ employee.id }}">
+                                    <label class="form-check-label w-100" for="employee_{{ employee.id }}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-user-tie text-primary fs-4"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-1">{{ employee.user.get_full_name|default:employee.user.username }}</h5>
+                                                <p class="text-muted mb-0">
+                                                    Especialista em: 
+                                                    {% for service in employee.services.all %}
+                                                        {{ service.name }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    O profissional será selecionado automaticamente baseado na disponibilidade.
+                </div>
+                <input type="hidden" name="employee_id" value="">
+            {% endif %}
+        </div>
+
+        <!-- Seleção de Data e Horário -->
+        <div class="mb-4">
+            <h4 class="section-title">
+                <i class="fas fa-calendar-alt me-2"></i>Data e Horário
+            </h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Data *</label>
+                    <input type="date" name="appointment_date" class="form-control" 
+                           min="{{ today|date:'Y-m-d' }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Horário *</label>
+                    <input type="time" name="appointment_time" class="form-control" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="mb-4">
+            <label class="form-label">Observações (opcional)</label>
+            <textarea name="notes" class="form-control" rows="3" 
+                      placeholder="Alguma observação especial para o agendamento..."></textarea>
+        </div>
+
+        <!-- Botão de Confirmação -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-calendar-check me-2"></i>Confirmar Agendamento
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Informações de Contato -->
+<div class="footer-info">
+    <h6 class="mb-2">Dúvidas ou precisa reagendar?</h6>
+    <p class="mb-0">
+        Entre em contato: {{ salon.phone }} | {{ salon.email }}
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.professional-card {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.professional-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.professional-card.selected {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+}
+
+.service-card {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.service-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.service-card.selected {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Selecionar serviço visualmente
+function selectService(serviceId) {
+    // Remove seleção anterior
+    document.querySelectorAll('.service-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Seleciona o serviço
+    const radio = document.getElementById('service_' + serviceId);
+    radio.checked = true;
+    
+    // Adiciona visual de selecionado
+    radio.closest('.service-card').classList.add('selected');
+}
+
+// Selecionar profissional visualmente
+function selectProfessional(employeeId) {
+    // Remove seleção anterior
+    document.querySelectorAll('.professional-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Seleciona o profissional
+    const radioId = employeeId === '' ? 'employee_any' : 'employee_' + employeeId;
+    const radio = document.getElementById(radioId);
+    radio.checked = true;
+    
+    // Adiciona visual de selecionado
+    radio.closest('.professional-card').classList.add('selected');
+}
+
+// Validação do formulário
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            isValid = false;
+            field.classList.add('is-invalid');
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        alert('Por favor, preencha todos os campos obrigatórios.');
+    }
+});
+
+// Adicionar evento de clique nos serviços
+document.querySelectorAll('.service-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            selectService(radio.value);
+        }
+    });
+});
+
+// Adicionar evento de clique nos profissionais
+document.querySelectorAll('.professional-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            selectProfessional(radio.value);
+        }
+    });
+});
+</script>
+{% endblock %}

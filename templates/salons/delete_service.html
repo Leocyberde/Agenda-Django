@@ -1,0 +1,55 @@
+
+{% extends 'base/base.html' %}
+
+{% block title %}Excluir Serviço - {{ service.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-trash me-2"></i>Excluir Serviço
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+                </div>
+
+                <p>Tem certeza que deseja excluir o serviço:</p>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        {% if service.description %}
+                            <p class="card-text">{{ service.description }}</p>
+                        {% endif %}
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Duração:</strong> {{ service.duration }} minutos
+                            </div>
+                            <div class="col-6">
+                                <strong>Preço:</strong> R$ {{ service.price }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'salons:services_list' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Confirmar Exclusão
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+<!-- HTMX-powered filter form -->
+<form hx-get="{{ request.path }}" 
+      hx-target="#content-container" 
+      hx-trigger="change, submit"
+      hx-indicator="#loading-spinner">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="status-filter" class="form-label">Status</label>
+            <select name="status" id="status-filter" class="form-select">
+                <option value="">Todos os status</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label for="date-filter" class="form-label">Data</label>
+            <input type="date" 
+                   name="date" 
+                   id="date-filter" 
+                   class="form-control" 
+                   value="{{ date_filter }}">
+        </div>
+        
+        <div class="col-md-3">
+            <label for="search-filter" class="form-label">Buscar</label>
+            <input type="text" 
+                   name="search" 
+                   id="search-filter" 
+                   class="form-control" 
+                   placeholder="Nome ou email do cliente"
+                   value="{{ search_filter }}"
+                   hx-trigger="keyup changed delay:500ms">
+        </div>
+        
+        <div class="col-md-3">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Filtrar
+                </button>
+                <button type="button" 
+                        class="btn btn-outline-secondary"
+                        hx-get="{{ request.path }}"
+                        hx-target="#content-container">
+                    <i class="fas fa-times me-2"></i>Limpar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading indicator -->
+    <div id="loading-spinner" class="htmx-indicator mt-3">
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    </div>
+</form>

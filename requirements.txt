@@ -1,0 +1,17 @@
+asgiref==3.9.1
+Django==5.2.6
+Pillow==11.3.0
+sqlparse==0.5.3
+mercadopago==2.3.0
+qrcode==8.2
+gunicorn==23.0.0
+asgiref==3.9.1
+Django==5.2.6
+gunicorn==23.0.0
+mercadopago==2.3.0
+Pillow==11.3.0
+qrcode==8.2
+sqlparse==0.5.3
+dj-database-url
+psycopg2-binary
+whitenoise

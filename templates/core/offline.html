@@ -1,0 +1,49 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Offline - Sistema de Agendamento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="text-center py-5">
+            <div class="offline-icon mb-4">
+                <i class="fas fa-wifi-slash" style="font-size: 4rem; color: #6c757d;"></i>
+            </div>
+            
+            <h1 class="h2 mb-3">Você está offline</h1>
+            
+            <p class="lead mb-4 text-muted">
+                Esta página não está disponível offline. Verifique sua conexão com a internet e tente novamente.
+            </p>
+            
+            <div class="d-grid gap-2 d-md-block">
+                <button class="btn btn-primary" onclick="window.location.reload()">
+                    <i class="fas fa-sync-alt me-2"></i>Tentar Novamente
+                </button>
+                <a href="{% url 'core:landing_page' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-2"></i>Página Inicial
+                </a>
+            </div>
+            
+            <div class="mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Algumas funcionalidades podem estar disponíveis quando você voltar a ficar online.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.offline-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+</style>
+{% endblock %}

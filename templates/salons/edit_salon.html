@@ -1,0 +1,276 @@
+
+{% extends 'base/base.html' %}
+
+{% block title %}Editar Salão - Sistema de Agendamento{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Editar Salão
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                            </h5>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.photo.id_for_label }}" class="form-label">{{ form.photo.label }}</label>
+                            {% if salon.photo %}
+                                <div class="mb-2">
+                                    <img src="{{ salon.photo.url }}" alt="Foto atual do salão" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
+                                    <p class="small mt-1 fw-semibold" style="background: transparent; color: var(--text-primary);">Foto atual</p>
+                                </div>
+                            {% endif %}
+                            {{ form.photo }}
+                            <div class="form-text">Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB</div>
+                            {% if form.photo.errors %}
+                                <div class="text-danger small">{{ form.photo.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">{{ form.phone.label }}</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger small">{{ form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-map-marker-alt me-2"></i>Endereço
+                            </h5>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">{{ form.address.label }}</label>
+                            {{ form.address }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }}</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.state.id_for_label }}" class="form-label">{{ form.state.label }}</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.zip_code.id_for_label }}" class="form-label">{{ form.zip_code.label }}</label>
+                            {{ form.zip_code }}
+                        </div>
+                    </div>
+
+                    <!-- Horários de Funcionamento -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-clock me-2"></i>Horários de Funcionamento
+                            </h5>
+                            <p class="text-muted small mb-3">
+                                Deixe em branco os dias que não funciona
+                            </p>
+                        </div>
+                        
+                        <!-- Segunda à Sexta -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Segunda à Sexta</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="{{ form.weekdays_open.id_for_label }}" class="form-label small">Abertura</label>
+                                    {{ form.weekdays_open }}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.weekdays_close.id_for_label }}" class="form-label small">Fechamento</label>
+                                    {{ form.weekdays_close }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sábado -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Sábado</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="{{ form.saturday_open.id_for_label }}" class="form-label small">Abertura</label>
+                                    {{ form.saturday_open }}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.saturday_close.id_for_label }}" class="form-label small">Fechamento</label>
+                                    {{ form.saturday_close }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Domingo -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Domingo</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="{{ form.sunday_open.id_for_label }}" class="form-label small">Abertura</label>
+                                    {{ form.sunday_open }}
+                                </div>
+                                <div class="col-6">
+                                    <label for="{{ form.sunday_close.id_for_label }}" class="form-label small">Fechamento</label>
+                                    {{ form.sunday_close }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Política de Cancelamento -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-ban me-2"></i>Política de Cancelamento
+                            </h5>
+                            <p class="text-muted small mb-3">
+                                Configure multas para cancelamentos tardios de agendamentos confirmados
+                            </p>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.cancellation_policy_enabled }}
+                                <label class="form-check-label" for="{{ form.cancellation_policy_enabled.id_for_label }}">
+                                    {{ form.cancellation_policy_enabled.label }}
+                                </label>
+                            </div>
+                            <small class="text-muted">Quando habilitada, clientes que cancelarem agendamentos confirmados próximos da data serão multados</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cancellation_fee_percentage.id_for_label }}" class="form-label">
+                                {{ form.cancellation_fee_percentage.label }}
+                            </label>
+                            {{ form.cancellation_fee_percentage }}
+                            <small class="text-muted">Porcentagem do valor do serviço cobrada como multa</small>
+                            {% if form.cancellation_fee_percentage.errors %}
+                                <div class="text-danger small">{{ form.cancellation_fee_percentage.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cancellation_hours_threshold.id_for_label }}" class="form-label">
+                                {{ form.cancellation_hours_threshold.label }}
+                            </label>
+                            {{ form.cancellation_hours_threshold }}
+                            <small class="text-muted">Cancelamentos com menos tempo que isso terão multa aplicada</small>
+                            {% if form.cancellation_hours_threshold.errors %}
+                                <div class="text-danger small">{{ form.cancellation_hours_threshold.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Como funciona:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Apenas agendamentos <strong>confirmados</strong> pelo funcionário podem receber multa</li>
+                                    <li>Se o cliente cancelar com <strong>mais</strong> tempo que o prazo configurado: sem multa</li>
+                                    <li>Se o cliente cancelar com <strong>menos</strong> tempo que o prazo configurado: aplica multa</li>
+                                    <li>As multas aparecem nos painéis do comerciante e do cliente</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elemento do checkbox de política de cancelamento
+    const policyCheckbox = document.getElementById('{{ form.cancellation_policy_enabled.id_for_label }}');
+    const feePercentageField = document.getElementById('{{ form.cancellation_fee_percentage.id_for_label }}');
+    const hoursThresholdField = document.getElementById('{{ form.cancellation_hours_threshold.id_for_label }}');
+    
+    if (policyCheckbox) {
+        // Função para mostrar/ocultar campos relacionados
+        function togglePolicyFields() {
+            const isChecked = policyCheckbox.checked;
+            const parentRows = [feePercentageField, hoursThresholdField].map(field => 
+                field ? field.closest('.col-md-6') : null
+            );
+            
+            parentRows.forEach(row => {
+                if (row) {
+                    row.style.display = isChecked ? 'block' : 'none';
+                }
+            });
+        }
+        
+        // Aplicar estado inicial
+        togglePolicyFields();
+        
+        // Escutar mudanças
+        policyCheckbox.addEventListener('change', function(e) {
+            console.log('Política de cancelamento alterada:', e.target.checked);
+            togglePolicyFields();
+        });
+        
+        // Prevenir que outros eventos interfiram com o checkbox
+        policyCheckbox.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Garantir que o formulário preserve o estado ao ser submetido
+        const form = policyCheckbox.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Forçar o valor do checkbox antes do submit
+                if (policyCheckbox.checked) {
+                    policyCheckbox.value = 'on';
+                } else {
+                    policyCheckbox.removeAttribute('checked');
+                }
+            });
+        }
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Erro no Pagamento{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-danger">
+                <div class="card-header bg-danger text-white text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-times-circle fa-4x"></i>
+                    </div>
+                    <h3 class="mb-0">Erro no Pagamento</h3>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead mb-4">
+                        Infelizmente, não foi possível processar seu pagamento.
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <strong>O que fazer agora?</strong>
+                        <ul class="list-unstyled mt-3 mb-0">
+                            <li class="mb-2">✓ Verifique os dados do seu cartão</li>
+                            <li class="mb-2">✓ Certifique-se de que há saldo disponível</li>
+                            <li class="mb-2">✓ Tente novamente em alguns minutos</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'subscriptions:detail' %}" class="btn btn-primary btn-lg me-2">
+                            <i class="fas fa-redo me-2"></i>
+                            Tentar Novamente
+                        </a>
+                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            Voltar ao Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

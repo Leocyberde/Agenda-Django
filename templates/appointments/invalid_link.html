@@ -1,0 +1,41 @@
+
+{% extends 'base/public_base.html' %}
+
+{% block title %}Link Inválido{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                    </div>
+
+                    <h3 class="text-danger mb-3">Link Inválido ou Expirado</h3>
+                    <p class="lead text-muted mb-4">
+                        O link de agendamento que você tentou acessar não é válido ou foi desativado.
+                    </p>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-info-circle me-2"></i>Possíveis motivos:</h6>
+                        <ul class="mb-0 text-start">
+                            <li>O link foi digitado incorretamente</li>
+                            <li>O link foi desativado pelo salão</li>
+                            <li>O link expirou</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-muted mb-3">Entre em contato com o salão para obter um novo link de agendamento.</p>
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Voltar ao Início
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

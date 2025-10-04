@@ -1,0 +1,278 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Loja - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-shopping-bag me-2"></i>Loja de Produtos
+                </h2>
+                <p class="text-muted mb-0">Produtos selecionados para o seu salão</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_filter }}" placeholder="Nome, marca ou descrição...">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="category" class="form-label">Categoria</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">Todas as categorias</option>
+                            {% for key, value in categories %}
+                                <option value="{{ key }}" {% if category_filter == key %}selected{% endif %}>
+                                    {{ value }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações sobre Cashback -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning border-opacity-50 shadow-sm">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins text-warning me-2"></i>Sistema de Cashback
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6><i class="fas fa-question-circle text-primary me-2"></i>Como funciona o cashback?</h6>
+                        <ul class="mb-0">
+                            <li><strong>Compre através dos nossos links:</strong> Use sempre o botão "Comprar Produto" para garantir seu cashback</li>
+                            <li><strong>Confirmação automática:</strong> O cashback é creditado após a confirmação da compra pela loja</li>
+                            <li><strong>Produtos com cashback:</strong> Identificados pelo ícone <i class="fas fa-coins text-warning"></i> e percentual destacado</li>
+                            <li><strong>Prazo de processamento:</strong> Cashback liberado em até 30 dias úteis após a compra</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                 style="width: 80px; height: 80px;">
+                                <i class="fas fa-dollar-sign text-success fa-2x"></i>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">Ganhe dinheiro comprando<br>produtos para seu salão!</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Produtos -->
+<div class="row">
+    {% if products %}
+        {% for product in products %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                {% if product.image_url %}
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" 
+                     style="height: 350px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                     style="height: 350px;">
+                    <i class="fas fa-image text-muted fa-4x"></i>
+                </div>
+                {% endif %}
+
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ product.name }}</h5>
+                        {% if product.is_featured %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-star"></i> Destaque
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="card-text text-muted mb-2">
+                        <strong>{{ product.brand }}</strong> - {{ product.get_category_display }}
+                    </p>
+
+                    <div class="product-description-container mb-3">
+                        <div class="description-preview">
+                            <p class="card-text">{{ product.description|truncatechars:120 }}</p>
+                        </div>
+                        <div class="description-full" style="display: none;">
+                            <p class="card-text">{{ product.description }}</p>
+                        </div>
+                        {% if product.description|length > 120 %}
+                        <button class="btn btn-link btn-sm p-0 text-decoration-none" onclick="toggleProductDescription(this)">
+                            <small><i class="fas fa-chevron-down me-1"></i>Ver mais</small>
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="h4 text-success mb-0">{{ product.price_formatted }}</span>
+                        </div>
+
+                        {% if product.has_cashback %}
+                        <div class="cashback-info bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded p-2 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-warning fw-bold">
+                                        <i class="fas fa-coins me-1"></i>CASHBACK
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-warning">{{ product.cashback_percentage }}%</div>
+                                    <small class="text-muted">{{ product.cashback_amount_formatted }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="mb-3"></div>
+                        {% endif %}
+
+                        <a href="{% url 'admin_panel:track_affiliate_click' product.id %}" 
+                           class="btn btn-primary w-100 btn-lg">
+                            <i class="fas fa-external-link-alt me-2"></i>Comprar Produto
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhum produto encontrado</h4>
+                <p class="text-muted">
+                    {% if search_filter or category_filter %}
+                        Tente ajustar seus filtros de busca.
+                    {% else %}
+                        Ainda não há produtos disponíveis na loja.
+                    {% endif %}
+                </p>
+                {% if search_filter or category_filter %}
+                <a href="{% url 'salons:store_products' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-times me-2"></i>Limpar Filtros
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title">
+                    <i class="fas fa-info-circle me-2"></i>Sobre nossa Loja
+                </h6>
+                <p class="card-text text-muted mb-0">
+                    Produtos cuidadosamente selecionados para salões de beleza com sistema de cashback exclusivo. 
+                    Compre através dos nossos links e ganhe dinheiro de volta em cada compra!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regulamento Detalhado do Cashback -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-file-contract me-2"></i>Regulamento do Sistema de Cashback
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">✅ Como Participar</h6>
+                        <ul class="small mb-3">
+                            <li>Estar com assinatura ativa no sistema</li>
+                            <li>Realizar compras através dos links disponibilizados</li>
+                            <li>Aguardar confirmação da compra pela loja</li>
+                        </ul>
+
+                        <h6 class="text-primary">💰 Valores e Pagamentos</h6>
+                        <ul class="small mb-3">
+                            <li>Percentual varia de acordo com cada produto</li>
+                            <li>Valor mínimo para saque: R$ 50,00</li>
+                            <li>Pagamentos realizados via PIX mensalmente</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">📅 Prazos</h6>
+                        <ul class="small mb-3">
+                            <li>Processamento: até 30 dias úteis</li>
+                            <li>Disponibilização: até 5 dias úteis após processamento</li>
+                            <li>Pagamento: até 10º dia útil do mês subsequente</li>
+                        </ul>
+
+                        <h6 class="text-primary">⚠️ Observações Importantes</h6>
+                        <ul class="small mb-0">
+                            <li>Cashback válido apenas para primeira compra do produto</li>
+                            <li>Cancelamento da compra cancela o cashback</li>
+                            <li>Sistema sujeito a alterações com aviso prévio</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleProductDescription(button) {
+    const container = button.closest('.product-description-container');
+    const preview = container.querySelector('.description-preview');
+    const full = container.querySelector('.description-full');
+    const icon = button.querySelector('i');
+    const text = button.querySelector('small');
+
+    if (full.style.display === 'none' || full.style.display === '') {
+        preview.style.display = 'none';
+        full.style.display = 'block';
+        icon.className = 'fas fa-chevron-up me-1';
+        text.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Ver menos';
+    } else {
+        preview.style.display = 'block';
+        full.style.display = 'none';
+        icon.className = 'fas fa-chevron-down me-1';
+        text.innerHTML = '<i class="fas fa-chevron-down me-1"></i>Ver mais';
+    }
+}
+</script>
+{% endblock %}

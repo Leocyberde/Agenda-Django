@@ -1,0 +1,145 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Agendamentos - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-calendar-alt me-2"></i>Agendamentos
+                <small class="text-muted">{{ salon.name }}</small>
+            </h2>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">Todos os status</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="date" class="form-label">Data</label>
+                        <input type="date" name="date" id="date" class="form-control" value="{{ date_filter }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                        <a href="{% url 'salons:appointments_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if appointments %}
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Serviço</th>
+                                    <th>Profissional</th>
+                                    <th>Data</th>
+                                    <th>Horário</th>
+                                    <th>Status</th>
+                                    <th>Preço</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in appointments %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ appointment.client.first_name }} {{ appointment.client.last_name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ appointment.client.email }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {{ appointment.service.name }}
+                                            <br>
+                                            <small class="text-muted">{{ appointment.service.duration }} min</small>
+                                        </td>
+                                        <td>
+                                            {% if appointment.employee %}
+                                                <strong>{{ appointment.employee.user.get_full_name|default:appointment.employee.user.username }}</strong>
+                                            {% else %}
+                                                <span class="text-muted">Não atribuído</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ appointment.appointment_date|date:"d/m/Y" }}</td>
+                                        <td>{{ appointment.appointment_time|time:"H:i" }}</td>
+                                        <td>
+                                            {% if appointment.status == 'scheduled' %}
+                                                <span class="badge bg-warning text-dark">{{ appointment.get_status_display }}</span>
+                                            {% elif appointment.status == 'confirmed' %}
+                                                <span class="badge bg-success">{{ appointment.get_status_display }}</span>
+                                            {% elif appointment.status == 'cancelled' %}
+                                                <span class="badge bg-danger">{{ appointment.get_status_display }}</span>
+                                            {% elif appointment.status == 'completed' %}
+                                                <span class="badge bg-primary">{{ appointment.get_status_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ appointment.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>R$ {{ appointment.service.price }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                {% if appointment.status == 'scheduled' %}
+                                                    <button class="btn btn-outline-success" title="Confirmar">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                {% endif %}
+                                                {% if appointment.status != 'cancelled' and appointment.status != 'completed' %}
+                                                    <button class="btn btn-outline-warning" title="Cancelar">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% endif %}
+                                                <!-- Botão para deletar em cascata -->
+                                                <form method="post" action="{% url 'salons:delete_appointment_cascade' appointment.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-outline-danger" title="Deletar permanentemente"
+                                                            onclick="return confirm('⚠️ ATENÇÃO: Esta ação irá DELETAR PERMANENTEMENTE este agendamento e todos os dados relacionados.\n\nCliente: {{ appointment.client.get_full_name|default:appointment.client.username }}\nServiço: {{ appointment.service.name }}\n\nEsta ação NÃO PODE ser desfeita!\n\nTem certeza que deseja continuar?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhum agendamento encontrado</h4>
+                <p class="text-muted">
+                    {% if status_filter or date_filter %}
+                        Nenhum agendamento encontrado com os filtros aplicados.
+                    {% else %}
+                        Ainda não há agendamentos para o seu salão.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
