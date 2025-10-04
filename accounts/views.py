@@ -37,18 +37,19 @@ def register_view(request):
             # Se for plano pago (VIP), fazer login automático e redirecionar para pagamento
             if plan == 'vip':
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                messages.info(request, 'Conta criada! Complete o pagamento para ativar sua assinatura VIP.')
                 
                 # Buscar o plano VIP para redirecionar para pagamento
                 from admin_panel.models import PlanPricing
                 try:
                     vip_plan = PlanPricing.objects.filter(plan_type='vip_30', is_active=True).first()
                     if vip_plan:
-                        return redirect('payments:checkout', plan_id=vip_plan.id)
-                except:
-                    pass
+                        messages.info(request, 'Conta criada! Complete o pagamento para ativar sua assinatura VIP.')
+                        return redirect('payments:gerar_pix', plan_id=vip_plan.id)
+                except Exception as e:
+                    logger.error(f"Erro ao buscar plano VIP: {e}")
                 
                 # Se não encontrar plano, redirecionar para página de assinaturas
+                messages.warning(request, 'Plano VIP não disponível no momento. Escolha um plano abaixo.')
                 return redirect('subscriptions:detail')
             else:
                 # Para plano trial, criar assinatura automaticamente
@@ -111,14 +112,14 @@ def dashboard_view(request):
         # Verificar se tem assinatura ativa
         subscription = getattr(request.user, 'subscription', None)
         
-        # Se não tem assinatura, redirecionar para escolher plano E fazer pagamento
+        # Se não tem assinatura, redirecionar para escolher plano
         if not subscription:
-            messages.info(request, 'Complete seu cadastro escolhendo um plano e realizando o pagamento.')
+            messages.info(request, 'Escolha um plano para começar a usar o sistema.')
             return redirect('subscriptions:detail')
         
-        # Se tem assinatura mas ela expirou, também redirecionar
+        # Se tem assinatura mas ela expirou, redirecionar para renovação
         if subscription and not subscription.is_active():
-            messages.warning(request, 'Sua assinatura expirou. Renove para continuar.')
+            messages.warning(request, 'Sua assinatura expirou. Renove para continuar usando o sistema.')
             return redirect('subscriptions:detail')
         
         # Verificar se tem salão cadastrado

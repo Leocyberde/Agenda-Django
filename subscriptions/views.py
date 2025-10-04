@@ -19,7 +19,8 @@ def subscription_detail(request):
     if request.user.profile.user_type != 'owner':
         messages.error(request, 'Acesso negado. Apenas proprietários podem acessar esta página.')
         return redirect('accounts:dashboard')
-
+    
+    subscription = getattr(request.user, 'subscription', None)
 
     # Verificar se a assinatura expirou
     if subscription:

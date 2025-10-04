@@ -340,13 +340,23 @@ def webhook(request):
                     defaults={'plan_type': payment.plan_type}
                 )
                 
+                # Atualizar ou renovar a assinatura
                 subscription.plan_type = payment.plan_type
                 subscription.start_date = timezone.now()
-                subscription.end_date = timezone.now() + timedelta(days=30)
+                
+                # Calcular data de término baseado no tipo de plano
+                if payment.plan_type == 'trial_10':
+                    subscription.end_date = timezone.now() + timedelta(days=10)
+                elif payment.plan_type == 'vip_30':
+                    subscription.end_date = timezone.now() + timedelta(days=30)
+                else:
+                    subscription.end_date = timezone.now() + timedelta(days=30)
+                
                 subscription.status = 'active'
+                subscription.last_renewal = timezone.now()
                 subscription.save()
                 
-                logger.info(f"Assinatura atualizada para {payment.user.email}")
+                logger.info(f"✅ Assinatura {payment.plan_type} ativada para {payment.user.email} até {subscription.end_date}")
                 
                 if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
                     try:
