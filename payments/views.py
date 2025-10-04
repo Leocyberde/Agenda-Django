@@ -175,7 +175,7 @@ def verificar_pagamento(request, payment_id):
             return JsonResponse({
                 'status': 'approved',
                 'message': 'Pagamento aprovado!',
-                'redirect': '/subscriptions/detail/'
+                'redirect': '/subscriptions/'
             })
         elif payment.status == 'rejected':
             return JsonResponse({
