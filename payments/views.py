@@ -194,6 +194,58 @@ def verificar_pagamento(request, payment_id):
             'message': 'Pagamento não encontrado'
         }, status=404)
 
+
+@login_required
+def aprovar_pagamento_manual(request, payment_id):
+    """APENAS PARA TESTE: Aprova pagamento manualmente"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Você não tem permissão para fazer isso.')
+        return redirect('subscriptions:detail')
+    
+    try:
+        payment = Payment.objects.get(id=payment_id)
+        
+        if payment.status == 'approved':
+            messages.info(request, 'Pagamento já foi aprovado anteriormente.')
+            return redirect('admin_panel:dashboard')
+        
+        # Aprovar pagamento
+        payment.status = 'approved'
+        payment.save()
+        
+        # Criar/atualizar assinatura
+        subscription, created = Subscription.objects.get_or_create(
+            user=payment.user,
+            defaults={'plan_type': payment.plan_type}
+        )
+        
+        subscription.plan_type = payment.plan_type
+        subscription.start_date = timezone.now()
+        subscription.status = 'active'
+        subscription.last_renewal = timezone.now()
+        
+        if payment.plan_type == 'trial_10':
+            subscription.end_date = timezone.now() + timedelta(days=10)
+        elif payment.plan_type == 'vip_30':
+            subscription.end_date = timezone.now() + timedelta(days=30)
+        else:
+            subscription.end_date = timezone.now() + timedelta(days=30)
+        
+        subscription.save()
+        
+        logger.info(f"✅ [MANUAL] Pagamento {payment_id} aprovado para {payment.user.email}")
+        messages.success(request, f'Pagamento aprovado! Assinatura ativada até {subscription.end_date.strftime("%d/%m/%Y")}')
+        
+        return redirect('admin_panel:owner_detail', owner_id=payment.user.profile.id)
+        
+    except Payment.DoesNotExist:
+        messages.error(request, 'Pagamento não encontrado.')
+        return redirect('admin_panel:dashboard')
+    except Exception as e:
+        logger.error(f"Erro ao aprovar pagamento: {e}")
+        messages.error(request, f'Erro ao aprovar pagamento: {str(e)}')
+        return redirect('admin_panel:dashboard')
+
 @login_required
 def checkout(request, plan_id):
     """Cria uma preferência de pagamento no Mercado Pago"""
@@ -299,103 +351,188 @@ def payment_failure(request):
     return render(request, 'payments/failure.html')
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_http_methods(["POST", "GET"])
 def webhook(request):
     """Webhook para receber notificações do Mercado Pago"""
     try:
-        data = json.loads(request.body)
-        logger.info(f"Webhook recebido: {data}")
+        # Log da requisição completa
+        logger.info(f"🔔 WEBHOOK MERCADO PAGO RECEBIDO")
+        logger.info(f"📦 Método: {request.method}")
+        logger.info(f"📦 Headers: {dict(request.headers)}")
+        logger.info(f"📦 Body: {request.body.decode('utf-8')}")
         
-        if data.get('type') == 'payment':
-            payment_id = data['data']['id']
+        # Mercado Pago pode enviar GET para verificar o endpoint
+        if request.method == 'GET':
+            return JsonResponse({'status': 'webhook_active'})
+        
+        data = json.loads(request.body)
+        logger.info(f"📦 Dados parseados: {json.dumps(data, indent=2)}")
+        
+        # Verificar tipo de notificação
+        notification_type = data.get('type') or data.get('topic')
+        logger.info(f"📌 Tipo de notificação: {notification_type}")
+        
+        if notification_type == 'payment':
+            # Obter ID do pagamento
+            payment_id = data.get('data', {}).get('id') or data.get('id')
             
+            if not payment_id:
+                logger.error("❌ Payment ID não encontrado na notificação")
+                return JsonResponse({'status': 'error', 'message': 'Payment ID not found'}, status=400)
+            
+            logger.info(f"💳 Payment ID: {payment_id}")
+            
+            # Buscar informações do pagamento no Mercado Pago
             sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
             payment_info = sdk.payment().get(payment_id)
+            
+            logger.info(f"📨 Resposta do Mercado Pago: Status={payment_info.get('status')}")
+            
+            if payment_info["status"] != 200:
+                logger.error(f"❌ Erro ao buscar pagamento: {payment_info}")
+                return JsonResponse({'status': 'error', 'message': 'Failed to fetch payment'}, status=400)
+            
             payment_data = payment_info["response"]
+            logger.info(f"💰 Dados do pagamento: {json.dumps(payment_data, indent=2)}")
             
-            logger.info(f"Dados do pagamento: {payment_data}")
-            
+            # Buscar external_reference
             external_reference = payment_data.get('external_reference')
-            if not external_reference:
-                logger.warning("External reference não encontrado")
-                return JsonResponse({'status': 'error', 'message': 'External reference not found'}, status=400)
             
-            try:
-                payment = Payment.objects.get(id=external_reference)
-            except Payment.DoesNotExist:
-                logger.error(f"Payment com ID {external_reference} não encontrado")
-                return JsonResponse({'status': 'error', 'message': 'Payment not found'}, status=404)
+            if not external_reference:
+                logger.warning("⚠️ External reference não encontrado, tentando buscar por payment_id")
+                # Tentar encontrar pelo payment_id
+                try:
+                    payment = Payment.objects.get(payment_id=str(payment_id))
+                    logger.info(f"✅ Pagamento encontrado pelo payment_id: {payment.id}")
+                except Payment.DoesNotExist:
+                    logger.error(f"❌ Nenhum pagamento encontrado com payment_id={payment_id}")
+                    return JsonResponse({'status': 'error', 'message': 'Payment not found'}, status=404)
+            else:
+                logger.info(f"🔍 External reference: {external_reference}")
+                # Buscar pelo external_reference
+                try:
+                    payment = Payment.objects.get(id=external_reference)
+                    logger.info(f"✅ Pagamento encontrado: {payment.id}")
+                except Payment.DoesNotExist:
+                    logger.error(f"❌ Payment com ID {external_reference} não encontrado")
+                    return JsonResponse({'status': 'error', 'message': 'Payment not found'}, status=404)
+            
+            # Atualizar status do pagamento
+            old_status = payment.status
+            new_status = payment_data.get('status', 'pending')
+            
+            logger.info(f"🔄 Atualizando status: {old_status} -> {new_status}")
             
             payment.payment_id = str(payment_id)
-            old_status = payment.status
-            new_status = payment_data['status']
             payment.status = new_status
             payment.save()
             
-            logger.info(f"Status do pagamento atualizado: {old_status} -> {new_status}")
+            logger.info(f"💾 Pagamento {payment.id} salvo com status {new_status}")
             
+            # Se o pagamento foi aprovado, ativar/renovar assinatura
             if new_status == 'approved' and old_status != 'approved':
-                subscription, created = Subscription.objects.get_or_create(
-                    user=payment.user,
-                    defaults={'plan_type': payment.plan_type}
-                )
+                logger.info(f"✅ PAGAMENTO APROVADO! Processando assinatura...")
                 
-                # Atualizar ou renovar a assinatura
-                subscription.plan_type = payment.plan_type
-                subscription.start_date = timezone.now()
-                
-                # Calcular data de término baseado no tipo de plano
-                if payment.plan_type == 'trial_10':
-                    subscription.end_date = timezone.now() + timedelta(days=10)
-                elif payment.plan_type == 'vip_30':
-                    subscription.end_date = timezone.now() + timedelta(days=30)
-                else:
-                    subscription.end_date = timezone.now() + timedelta(days=30)
-                
-                subscription.status = 'active'
-                subscription.last_renewal = timezone.now()
-                subscription.save()
-                
-                logger.info(f"✅ Assinatura {payment.plan_type} ativada para {payment.user.email} até {subscription.end_date}")
-                
-                if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
-                    try:
-                        send_mail(
-                            subject='Pagamento Aprovado - Agende sua Beleza',
-                            message=f'''
-Olá {payment.user.get_full_name() or payment.user.username},
+                try:
+                    # Buscar ou criar assinatura
+                    subscription, created = Subscription.objects.get_or_create(
+                        user=payment.user,
+                        defaults={
+                            'plan_type': payment.plan_type,
+                            'status': 'active'
+                        }
+                    )
+                    
+                    if created:
+                        logger.info(f"📝 Nova assinatura criada para {payment.user.email}")
+                    else:
+                        logger.info(f"🔄 Assinatura existente encontrada, atualizando...")
+                    
+                    # Atualizar dados da assinatura
+                    subscription.plan_type = payment.plan_type
+                    subscription.start_date = timezone.now()
+                    subscription.status = 'active'
+                    subscription.last_renewal = timezone.now()
+                    
+                    # Calcular data de término
+                    if payment.plan_type == 'trial_10':
+                        subscription.end_date = timezone.now() + timedelta(days=10)
+                        logger.info(f"📅 Plano Trial: 10 dias")
+                    elif payment.plan_type == 'vip_30':
+                        subscription.end_date = timezone.now() + timedelta(days=30)
+                        logger.info(f"📅 Plano VIP: 30 dias")
+                    else:
+                        subscription.end_date = timezone.now() + timedelta(days=30)
+                        logger.info(f"📅 Plano padrão: 30 dias")
+                    
+                    subscription.save()
+                    
+                    logger.info(f"✅ ASSINATURA ATIVADA!")
+                    logger.info(f"👤 Usuário: {payment.user.email}")
+                    logger.info(f"📦 Plano: {subscription.get_plan_type_display()}")
+                    logger.info(f"📅 Válido até: {subscription.end_date.strftime('%d/%m/%Y %H:%M')}")
+                    logger.info(f"💰 Valor pago: R$ {payment.amount}")
+                    
+                    # Enviar email de confirmação
+                    if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
+                        try:
+                            send_mail(
+                                subject='✅ Pagamento Aprovado - Agende sua Beleza',
+                                message=f'''
+Olá {payment.user.get_full_name() or payment.user.username}!
 
-Seu pagamento foi aprovado com sucesso!
+🎉 Seu pagamento foi aprovado com sucesso!
 
-Detalhes:
-- Valor: R$ {payment.amount}
-- Plano: {subscription.get_plan_type_display()}
-- Válido até: {subscription.end_date.strftime('%d/%m/%Y')}
+📋 Detalhes da Assinatura:
+━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 Valor Pago: R$ {payment.amount}
+📦 Plano: {subscription.get_plan_type_display()}
+📅 Válido até: {subscription.end_date.strftime('%d/%m/%Y às %H:%M')}
+🆔 ID do Pagamento: {payment_id}
 
-Agora você tem acesso completo a todos os recursos do sistema.
+✨ Agora você tem acesso completo a todos os recursos do sistema!
 
-Obrigado por escolher Agende sua Beleza!
+Acesse: {request.build_absolute_uri('/')}
+
+Obrigado por escolher Agende sua Beleza! 💖
 
 Atenciosamente,
 Equipe Agende sua Beleza
-                            ''',
-                            from_email=settings.DEFAULT_FROM_EMAIL or 'noreply@salonbooking.com',
-                            recipient_list=[payment.user.email],
-                            fail_silently=True,
-                        )
-                        logger.info(f"Email enviado para {payment.user.email}")
-                    except Exception as e:
-                        logger.error(f"Erro ao enviar email: {e}")
-                else:
-                    logger.warning("Configuração de email não disponível, email não enviado")
+                                ''',
+                                from_email=settings.DEFAULT_FROM_EMAIL or 'noreply@salonbooking.com',
+                                recipient_list=[payment.user.email],
+                                fail_silently=True,
+                            )
+                            logger.info(f"📧 Email de confirmação enviado para {payment.user.email}")
+                        except Exception as e:
+                            logger.error(f"❌ Erro ao enviar email: {e}", exc_info=True)
+                    else:
+                        logger.warning("⚠️ Configuração de email não disponível")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Erro ao processar assinatura: {e}", exc_info=True)
+                    return JsonResponse({'status': 'error', 'message': f'Subscription error: {str(e)}'}, status=500)
             
-            return JsonResponse({'status': 'success'})
+            elif new_status == 'rejected':
+                logger.warning(f"❌ Pagamento {payment_id} foi REJEITADO")
+            elif new_status == 'cancelled':
+                logger.warning(f"❌ Pagamento {payment_id} foi CANCELADO")
+            else:
+                logger.info(f"⏳ Pagamento {payment_id} está {new_status}")
+            
+            return JsonResponse({
+                'status': 'success',
+                'payment_id': str(payment_id),
+                'payment_status': new_status,
+                'subscription_activated': new_status == 'approved'
+            })
         
-        return JsonResponse({'status': 'ignored'})
+        logger.info(f"ℹ️ Notificação ignorada: tipo {notification_type}")
+        return JsonResponse({'status': 'ignored', 'type': notification_type})
     
-    except json.JSONDecodeError:
-        logger.error("Erro ao decodificar JSON")
+    except json.JSONDecodeError as e:
+        logger.error(f"❌ Erro ao decodificar JSON: {e}")
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
     except Exception as e:
-        logger.error(f"Erro no webhook: {e}")
+        logger.error(f"❌ ERRO NO WEBHOOK: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
