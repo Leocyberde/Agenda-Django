@@ -199,10 +199,16 @@ def checkout(request, plan_id):
     """Cria uma preferência de pagamento no Mercado Pago"""
     plan = get_object_or_404(PlanPricing, id=plan_id, is_active=True)
     
+    logger.info(f"🔵 INICIANDO CHECKOUT")
+    logger.info(f"👤 Usuário: {request.user.email}")
+    logger.info(f"💰 Plano: {plan.get_plan_type_display()} - R$ {plan.price}")
+    
     if not settings.MERCADOPAGO_ACCESS_TOKEN or not settings.MP_PUBLIC_KEY:
+        logger.error(f"❌ Credenciais do Mercado Pago não configuradas")
         messages.error(request, 'Configuração de pagamento não disponível. Contate o administrador.')
         return redirect('subscriptions:detail')
     
+    logger.info(f"✅ Credenciais do Mercado Pago encontradas")
     sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
     
     payment = Payment.objects.create(
@@ -235,20 +241,46 @@ def checkout(request, plan_id):
         "notification_url": settings.WEBHOOK_URL
     }
     
-    preference_response = sdk.preference().create(preference_data)
-    preference = preference_response["response"]
-    
-    payment.preference_id = preference["id"]
-    payment.save()
-    
-    context = {
-        'preference_id': preference["id"],
-        'mp_public_key': settings.MP_PUBLIC_KEY,
-        'plan': plan,
-        'payment': payment
-    }
-    
-    return render(request, 'payments/checkout.html', context)
+    try:
+        preference_response = sdk.preference().create(preference_data)
+        
+        logger.info(f"📨 RESPOSTA DA PREFERÊNCIA:")
+        logger.info(f"Status: {preference_response.get('status')}")
+        logger.info(f"Response: {preference_response}")
+        
+        if preference_response["status"] != 201:
+            logger.error(f"❌ ERRO: Status diferente de 201")
+            logger.error(f"Resposta: {preference_response}")
+            messages.error(request, f'Erro ao criar preferência de pagamento: Status {preference_response.get("status")}')
+            payment.delete()
+            return redirect('subscriptions:detail')
+        
+        preference = preference_response["response"]
+        
+        if 'id' not in preference:
+            logger.error(f"❌ ERRO: ID não encontrado na resposta da preferência")
+            logger.error(f"Resposta completa: {preference}")
+            messages.error(request, 'Erro ao criar preferência de pagamento. Verifique suas credenciais do Mercado Pago.')
+            payment.delete()
+            return redirect('subscriptions:detail')
+        
+        payment.preference_id = preference["id"]
+        payment.save()
+        
+        context = {
+            'preference_id': preference["id"],
+            'mp_public_key': settings.MP_PUBLIC_KEY,
+            'plan': plan,
+            'payment': payment
+        }
+        
+        return render(request, 'payments/checkout.html', context)
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar preferência: {e}", exc_info=True)
+        messages.error(request, f'Erro ao processar pagamento: {str(e)}')
+        payment.delete()
+        return redirect('subscriptions:detail')
 
 def payment_success(request):
     """Página de sucesso do pagamento"""
