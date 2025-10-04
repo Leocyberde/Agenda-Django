@@ -31,10 +31,41 @@ def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST, plan_type=plan_type)
         if form.is_valid():
-            # Criar conta normalmente (removido sistema de pagamento)
+            # Criar o usuário
             user = form.save()
-            messages.success(request, 'Conta criada com sucesso! Faça login para continuar.')
-            return redirect('accounts:login')
+            
+            # Se for plano pago (VIP), fazer login automático e redirecionar para pagamento
+            if plan == 'vip':
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                messages.info(request, 'Conta criada! Complete o pagamento para ativar sua assinatura VIP.')
+                
+                # Buscar o plano VIP para redirecionar para pagamento
+                from admin_panel.models import PlanPricing
+                try:
+                    vip_plan = PlanPricing.objects.filter(plan_type='vip_30', is_active=True).first()
+                    if vip_plan:
+                        return redirect('payments:checkout', plan_id=vip_plan.id)
+                except:
+                    pass
+                
+                # Se não encontrar plano, redirecionar para página de assinaturas
+                return redirect('subscriptions:detail')
+            else:
+                # Para plano trial, criar assinatura automaticamente
+                from subscriptions.models import Subscription
+                from datetime import timedelta
+                from django.utils import timezone
+                
+                Subscription.objects.create(
+                    user=user,
+                    plan_type='trial_10',
+                    start_date=timezone.now(),
+                    end_date=timezone.now() + timedelta(days=10),
+                    status='active'
+                )
+                
+                messages.success(request, 'Conta criada com sucesso! Faça login para continuar.')
+                return redirect('accounts:login')
     else:
         form = CustomUserCreationForm(plan_type=plan_type)
     
@@ -69,7 +100,12 @@ def dashboard_view(request):
     if request.user.is_superuser:
         return redirect('admin_panel:dashboard')
     
-    profile = request.user.profile
+    # Garantir que o perfil existe antes de acessá-lo
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        # Se não existe perfil, criar um padrão
+        profile = UserProfile.objects.create(user=request.user, user_type='owner')
     
     if profile.user_type == 'owner':
         # Verificar se tem assinatura ativa

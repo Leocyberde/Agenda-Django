@@ -132,6 +132,14 @@ All required environment variables have been successfully added to Replit Secret
 🟢 Performance: Excellent (sub-1ms load times)
 🟢 Ready for Production Deployment
 
+**Fixes Applied (October 04, 2025):**
+1. **Registration Flow for Paid Plans (VIP)**: Fixed registration to properly redirect VIP plan users to payment page instead of creating accounts without payment verification. Now:
+   - VIP registrations create user account → auto-login → redirect to payment checkout
+   - Trial registrations create user with immediate 10-day active subscription
+   - Payment must be approved via Mercado Pago webhook to activate VIP subscription
+
+2. **Admin Dashboard Access**: Fixed error when superuser tries to access dashboard without a UserProfile. Added try-except block to create profile automatically if missing, preventing crashes for admin users.
+
 **Payment System Removed (October 04, 2025 - Morning):**
 All payment-related code removed from the application:
 - Removed `from payments.models import Payment` from accounts/views.py and admin_panel/views.py
