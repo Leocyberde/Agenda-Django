@@ -188,7 +188,8 @@ DEFAULT_FROM_EMAIL = os.environ.get('MAIL_USERNAME', 'noreply@salonbooking.com')
 # Mercado Pago Configuration
 MERCADOPAGO_ACCESS_TOKEN = os.environ.get('MERCADOPAGO_ACCESS_TOKEN', '')
 MP_PUBLIC_KEY = os.environ.get('MP_PUBLIC_KEY', '')
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://agenda-django-0dr6.onrender.com/payments/webhook/')
+WEBHOOK_BASE_URL = os.environ.get('WEBHOOK_BASE_URL', '')
+WEBHOOK_URL = f'{WEBHOOK_BASE_URL}/payments/webhook/' if WEBHOOK_BASE_URL else 'https://agenda-django-0dr6.onrender.com/payments/webhook/'
 
 # Login URLs
 LOGIN_URL = '/accounts/login/'
