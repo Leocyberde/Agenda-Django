@@ -140,6 +140,17 @@ All required environment variables have been successfully added to Replit Secret
 
 2. **Admin Dashboard Access**: Fixed error when superuser tries to access dashboard without a UserProfile. Added try-except block to create profile automatically if missing, preventing crashes for admin users.
 
+3. **Pricing Plans Created**: Initialized default pricing plans in database:
+   - Plano Explorador (trial_10): R$ 0,00 - 10 days trial
+   - Plano Revolucionário (vip_30): R$ 49,90 - 30 days VIP
+   
+4. **Checkout Page Improvements**: Enhanced payment checkout with better error handling:
+   - Added loading indicator while Mercado Pago SDK loads
+   - Comprehensive error messages for payment failures
+   - 15-second timeout detection with helpful feedback
+   - Console logging for debugging payment issues
+   - Fallback button to return to plans page if payment fails
+
 **Payment System Removed (October 04, 2025 - Morning):**
 All payment-related code removed from the application:
 - Removed `from payments.models import Payment` from accounts/views.py and admin_panel/views.py
