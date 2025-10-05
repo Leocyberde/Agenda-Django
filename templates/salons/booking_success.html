@@ -1,0 +1,140 @@
+
+{% load static %}
+
+{% if is_public_booking %}
+    {% extends 'base/public_base.html' %}
+{% else %}
+    {% extends 'base/base.html' %}
+{% endif %}
+
+{% block title %}Agendamento Confirmado - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Confirmação de Sucesso -->
+            <div class="card border-success">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+
+                    <h3 class="text-success mb-3">Agendamento Confirmado!</h3>
+                    <p class="lead text-muted mb-4">
+                        Seu agendamento foi realizado com sucesso. Confira os detalhes abaixo:
+                    </p>
+                </div>
+            </div>
+
+            <!-- Detalhes do Agendamento -->
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>Detalhes do Agendamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">SALÃO</label>
+                            <div class="fw-bold">{{ salon.name }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">CLIENTE</label>
+                            <div class="fw-bold">{{ appointment.client.get_full_name|default:appointment.client.username }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">SERVIÇO</label>
+                            <div class="fw-bold">{{ appointment.service.name }}</div>
+                            <small class="text-muted">{{ appointment.service.duration }} minutos - R$ {{ appointment.service.price }}</small>
+                        </div>
+                        {% if appointment.employee %}
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">PROFISSIONAL</label>
+                            <div class="fw-bold">{{ appointment.employee.user.get_full_name|default:appointment.employee.user.username }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">DATA</label>
+                            <div class="fw-bold">{{ appointment.appointment_date|date:"d/m/Y" }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">HORÁRIO</label>
+                            <div class="fw-bold">{{ appointment.appointment_time|time:"H:i" }}</div>
+                        </div>
+                        {% if appointment.notes %}
+                        <div class="col-12 mb-3">
+                            <label class="text-muted small">OBSERVAÇÕES</label>
+                            <div class="fw-bold">{{ appointment.notes }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações Importantes -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Informações Importantes
+                    </h6>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-primary me-2"></i>
+                                    Chegue com 5 minutos de antecedência
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-phone text-primary me-2"></i>
+                                    Para reagendar, ligue: {{ salon.phone }}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-envelope text-primary me-2"></i>
+                                    Dúvidas: {{ salon.email }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                    {{ salon.address }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botão de Contato -->
+            <div class="text-center mt-4">
+                <a href="tel:{{ salon.phone }}" class="btn btn-primary me-2">
+                    <i class="fas fa-phone me-2"></i>Ligar para o Salão
+                </a>
+                <a href="mailto:{{ salon.email }}" class="btn btn-outline-primary">
+                    <i class="fas fa-envelope me-2"></i>Enviar Email
+                </a>
+            </div>
+
+            <!-- Aviso de Cancelamento -->
+            <div class="alert alert-warning mt-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Política de Cancelamento:</strong> Para cancelar ou reagendar, entre em contato 
+                com pelo menos 2 horas de antecedência através do telefone {{ salon.phone }}.
+            </div>
+
+            <!-- Botão para fechar (apenas para agendamentos públicos) -->
+            {% if is_public_booking %}
+            <div class="text-center mt-4 mb-3">
+                <button type="button" class="btn btn-secondary" onclick="window.close()">
+                    <i class="fas fa-times me-2"></i>Fechar
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

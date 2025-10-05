@@ -1,0 +1,240 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Painel do Funcionário - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-user-tie me-2"></i>Meu Painel
+                </h2>
+                <p class="text-muted mb-0">Bem-vindo, {{ employee.user.get_full_name|default:employee.user.username }} - {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'accounts:logout' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sign-out-alt me-2"></i>Sair
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-2">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <h3 class="text-primary mb-1">{{ stats.appointments_today }}</h3>
+                <p class="text-muted mb-0">Agendamentos Hoje</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-2">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <h3 class="text-primary mb-1">{{ stats.appointments_week }}</h3>
+                <p class="text-muted mb-0">Esta Semana</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-warning mb-2">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="text-warning mb-1">{{ stats.pending_appointments }}</h3>
+                <p class="text-muted mb-0">Pendentes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-success mb-2">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h3 class="text-success mb-1">{{ stats.my_services }}</h3>
+                <p class="text-muted mb-0">Meus Serviços</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Ganhos (apenas para funcionários que recebem por porcentagem) -->
+{% if employee.payment_type == 'percentage' and earnings_by_service %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-money-bill-wave me-2"></i>Meus Ganhos - {{ current_month }}/{{ current_year }}
+                </h5>
+                <div class="badge bg-success fs-6">
+                    Total: R$ {{ total_monthly_earnings|floatformat:2 }}
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Você recebe {{ employee.commission_percentage|floatformat:0 }}% sobre cada serviço realizado
+                </p>
+                
+                <div class="row">
+                    {% for earning in earnings_by_service %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">{{ earning.service.name }}</h6>
+                                <div class="small text-muted mb-2">
+                                    <div>Preço do serviço: R$ {{ earning.price|floatformat:2 }}</div>
+                                    <div>Sua comissão: {{ earning.commission_rate|floatformat:0 }}%</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <div class="text-success fw-bold">
+                                            R$ {{ earning.earning_per_service|floatformat:2 }}
+                                        </div>
+                                        <div class="small text-muted">por serviço</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold">{{ earning.count }} serviços</div>
+                                        <div class="text-primary">
+                                            = R$ {{ earning.total_earned|floatformat:2 }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif employee.payment_type == 'percentage' %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-money-bill-wave me-2"></i>Meus Ganhos - {{ current_month }}/{{ current_year }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line display-4 text-muted mb-3"></i>
+                    <p class="text-muted mb-2">Nenhum serviço concluído este mês ainda</p>
+                    <p class="small text-muted">
+                        Você recebe {{ employee.commission_percentage|floatformat:0 }}% sobre cada serviço realizado
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Meus Próximos Agendamentos -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Meus Próximos Agendamentos
+                </h5>
+                <a href="{% url 'salons:employee_appointments' %}" class="btn btn-sm btn-outline-primary">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_appointments %}
+                    <div class="list-group list-group-flush">
+                        {% for appointment in upcoming_appointments %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ appointment.client.first_name }} {{ appointment.client.last_name }}</h6>
+                                    <p class="mb-1">
+                                        <strong>{{ appointment.service.name }}</strong> - 
+                                        {{ appointment.appointment_date|date:"d/m/Y" }} às {{ appointment.appointment_time|time:"H:i" }}
+                                    </p>
+                                    <small class="text-muted">{{ appointment.service.duration }} min - R$ {{ appointment.service.price }}</small>
+                                </div>
+                                <span class="badge bg-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'scheduled' %}warning{% else %}secondary{% endif %}">
+                                    {{ appointment.get_status_display }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times display-4 text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum agendamento próximo</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações e Informações -->
+    <div class="col-lg-4 mb-4">
+        <!-- Ações Rápidas -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'salons:employee_appointments' %}" class="btn btn-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Meus Agendamentos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meus Serviços -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Meus Serviços
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if employee.services.all %}
+                    {% for service in employee.services.all %}
+                        <span class="badge bg-primary me-1 mb-1">{{ service.name }}</span>
+                    {% endfor %}
+                {% else %}
+                    <small class="text-muted">Nenhum serviço atribuído</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Informações do Salão -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações do Salão
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Nome:</strong> {{ salon.name }}</p>
+                <p class="mb-2"><strong>Endereço:</strong> {{ salon.address }}</p>
+                <p class="mb-2"><strong>Cidade:</strong> {{ salon.city }}, {{ salon.state }}</p>
+                <p class="mb-0"><strong>Telefone:</strong> {{ salon.phone }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

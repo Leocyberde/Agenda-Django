@@ -1,0 +1,200 @@
+
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Gerenciar Assinatura - {{ owner.user.first_name }} {{ owner.user.last_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>
+                    <i class="fas fa-crown me-2"></i>Gerenciar Assinatura
+                </h2>
+                <p class="text-muted mb-0">{{ owner.user.first_name }} {{ owner.user.last_name }} - {{ owner.user.email }}</p>
+            </div>
+            <a href="{% url 'admin_panel:owner_detail' owner.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Status Atual -->
+    <div class="col-lg-6 mb-4">
+        <div class="card admin-card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Status Atual da Assinatura
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-2"><strong>Plano:</strong></p>
+                            <p class="mb-3">{{ subscription.get_plan_type_display }}</p>
+                            
+                            <p class="mb-2"><strong>Status:</strong></p>
+                            <p class="mb-3">
+                                {% if subscription.is_active %}
+                                    <span class="badge bg-success fs-6">Ativa</span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">Expirada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-2"><strong>Início:</strong></p>
+                            <p class="mb-3">{{ subscription.start_date|date:"d/m/Y H:i" }}</p>
+                            
+                            <p class="mb-2"><strong>Término:</strong></p>
+                            <p class="mb-3">{{ subscription.end_date|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <h4 class="text-primary">{{ subscription.days_remaining }} dia{{ subscription.days_remaining|pluralize }} restante{{ subscription.days_remaining|pluralize }}</h4>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle text-warning display-4 mb-3"></i>
+                        <h5 class="text-muted">Nenhuma assinatura encontrada</h5>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações de Gerenciamento -->
+    <div class="col-lg-6 mb-4">
+        <div class="card admin-card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Ações de Gerenciamento
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- Renovar Assinatura -->
+                <div class="mb-4">
+                    <h6 class="text-primary">Renovar Assinatura</h6>
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="renew">
+                                <input type="hidden" name="plan_type" value="trial_10">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-clock me-2"></i>Teste 10 dias
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="renew">
+                                <input type="hidden" name="plan_type" value="vip_30">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-crown me-2"></i>VIP 30 dias
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estender Assinatura -->
+                <div class="mb-4">
+                    <h6 class="text-success">Estender Assinatura</h6>
+                    <form method="post" class="row g-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="extend">
+                        <div class="col-8">
+                            <input type="number" name="days" class="form-control" placeholder="Dias" min="1" max="365" required>
+                        </div>
+                        <div class="col-4">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-plus me-1"></i>Estender
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Correção Rápida -->
+                {% if subscription and subscription.plan_type == 'trial_10' %}
+                <div class="mb-4">
+                    <h6 class="text-warning">Correção Rápida</h6>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="fix_to_vip">
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="fas fa-magic me-2"></i>Corrigir para VIP 30 dias
+                        </button>
+                    </form>
+                    <small class="text-muted">Use esta opção se o usuário se registrou para VIP mas recebeu trial</small>
+                </div>
+                {% endif %}
+
+                <!-- Controle de Status -->
+                <div class="mb-0">
+                    <h6 class="text-secondary">Controle de Status</h6>
+                    <div class="btn-group w-100">
+                        {% if subscription and subscription.status != 'active' %}
+                            <form method="post" class="flex-fill">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="activate">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-play me-2"></i>Ativar
+                                </button>
+                            </form>
+                        {% endif %}
+                        
+                        {% if subscription and subscription.status == 'active' %}
+                            <form method="post" class="flex-fill">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="cancel">
+                                <button type="submit" class="btn btn-danger w-100" 
+                                        onclick="return confirm('Tem certeza que deseja cancelar esta assinatura?')">
+                                    <i class="fas fa-stop me-2"></i>Cancelar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Histórico de Mudanças -->
+<div class="row">
+    <div class="col-12">
+        <div class="card admin-card">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Informações Adicionais
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Criada em:</strong> {{ subscription.created_at|date:"d/m/Y H:i" }}</p>
+                            <p class="mb-0"><strong>Última renovação:</strong> 
+                                {{ subscription.last_renewal|date:"d/m/Y H:i"|default:"Nunca renovada" }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Dica:</strong> Use "Estender" para adicionar dias à assinatura atual, 
+                                ou "Renovar" para reiniciar o período.
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Registros Financeiros - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-list me-2"></i>Registros Financeiros
+                </h2>
+                <p class="text-muted mb-0">Histórico completo - {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:add_financial_record' %}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus me-2"></i>Adicionar Registro
+                </a>
+                <a href="{% url 'salons:financial_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Dashboard Financeiro
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-arrow-up text-success fa-2x mb-2"></i>
+                <h4 class="text-success">R$ {{ total_income|floatformat:2 }}</h4>
+                <p class="mb-0">Total de Receitas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-arrow-down text-danger fa-2x mb-2"></i>
+                <h4 class="text-danger">R$ {{ total_expenses|floatformat:2 }}</h4>
+                <p class="mb-0">Total de Despesas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-balance-scale text-primary fa-2x mb-2"></i>
+                <h4 class="text-{% if net_result >= 0 %}success{% else %}warning{% endif %}">R$ {{ net_result|floatformat:2 }}</h4>
+                <p class="mb-0">Resultado Líquido</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-2">
+                        <label for="month" class="form-label">Mês</label>
+                        <select name="month" id="month" class="form-control">
+                            <option value="">Todos</option>
+                            {% for i in "123456789012"|make_list %}
+                                <option value="{{ forloop.counter }}" {% if filters.month == forloop.counter|stringformat:"s" %}selected{% endif %}>
+                                    {{ forloop.counter }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="year" class="form-label">Ano</label>
+                        <input type="number" name="year" id="year" class="form-control" value="{{ filters.year }}" min="2020" max="2030">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="type" class="form-label">Tipo</label>
+                        <select name="type" id="type" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="income" {% if filters.type == 'income' %}selected{% endif %}>Receitas</option>
+                            <option value="expense" {% if filters.type == 'expense' %}selected{% endif %}>Despesas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="category" class="form-label">Categoria</label>
+                        <input type="text" name="category" id="category" class="form-control" value="{{ filters.category }}" placeholder="Digite a categoria">
+                    </div>
+                </div>
+
+                <!-- Botões movidos para uma nova linha -->
+                <div class="row mt-3">
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                        <a href="{% url 'salons:financial_records_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpar
+                        </a>
+                    </div>
+</form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Registros -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Registros</h5>
+            </div>
+            <div class="card-body">
+                {% if records %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Mês/Ano Ref.</th>
+                                    <th>Tipo</th>
+                                    <th>Categoria</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Funcionário</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                <tr>
+                                    <td>{{ record.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ record.reference_month }}/{{ record.reference_year }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if record.transaction_type == 'income' %}success{% else %}danger{% endif %}">
+                                            {{ record.get_transaction_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ record.get_category_display_friendly }}</td>
+                                    <td>{{ record.description }}</td>
+                                    <td class="text-{% if record.transaction_type == 'income' %}success{% else %}danger{% endif %} fw-bold">
+                                        {% if record.transaction_type == 'expense' %}-{% endif %}R$ {{ record.amount|floatformat:2 }}
+                                    </td>
+                                    <td>
+                                        {% if record.related_employee %}
+                                            {{ record.related_employee.user.get_full_name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">Nenhum registro encontrado.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

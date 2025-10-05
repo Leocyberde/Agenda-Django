@@ -1,0 +1,258 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Gerenciar Links de Clientes - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-users me-2"></i>Links de Agendamento de Clientes
+                </h2>
+                <p class="text-muted mb-0">Cada link é individual para um cliente específico - crie um novo para cada cliente</p>
+            </div>
+            <div>
+                <form method="post" action="{% url 'salons:create_client_link' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Criar Novo Link
+                    </button>
+                </form>
+                <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instruções -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle me-2"></i>Como funciona</h6>
+            <p class="mb-0">
+                1. <strong>Crie um link único</strong> para cada novo cliente<br>
+                2. <strong>Compartilhe o link</strong> com o cliente (WhatsApp, email, etc.)<br>
+                3. <strong>Cliente acessa</strong> o link, cadastra dados e agenda<br>
+                4. <strong>Link se torna exclusivo</strong> do cliente para futuros agendamentos
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Nova seção de como funciona o sistema -->
+<div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Como funciona o sistema de links?</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-step-forward me-2 text-primary"></i>1. Criar link único</h6>
+                        <p class="small text-muted">Cada link é individual para um cliente específico. Crie um novo para cada cliente.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-step-forward me-2 text-primary"></i>2. Enviar para o cliente</h6>
+                        <p class="small text-muted">Envie o link por WhatsApp, email ou qualquer meio de comunicação.</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-step-forward me-2 text-primary"></i>3. Cliente se cadastra</h6>
+                        <p class="small text-muted">No primeiro acesso, o cliente preenche seus dados e faz o agendamento.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-step-forward me-2 text-primary"></i>4. Link fica exclusivo dele</h6>
+                        <p class="small text-muted">A partir daí, só ele pode usar o link para ver seu histórico e agendar novos serviços.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- Lista de Links -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Links Criados ({{ links.count }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if links %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Cliente Vinculado</th>
+                                    <th>Status</th>
+                                    <th>Agendamentos</th>
+                                    <th>Criado em</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for link in links %}
+                                <tr class="{% if not link.is_active %}table-secondary{% endif %}">
+                                    <td>
+                                        <code class="text-primary">{{ link.token }}</code>
+                                        <br>
+                                        <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'appointments:client_booking' link.token %}" 
+                                               id="link-{{ link.id }}" readonly>
+                                        <button class="btn btn-outline-primary btn-sm copy-link-btn" 
+                                                data-link-id="link-{{ link.id }}"
+                                                data-link="{{ request.scheme }}://{{ request.get_host }}{% url 'appointments:client_booking' link.token %}"
+                                                title="Copiar link">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    </td>
+                                    <td>
+                                        {% if link.client %}
+                                            <strong>{{ link.client.get_full_name|default:link.client.username }}</strong><br>
+                                            <small class="text-muted">{{ link.client.email }}</small>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Não vinculado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if link.is_active %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if link.client %}
+                                            {% with appointments_count=link.get_client_appointments.count %}
+                                                {% if appointments_count > 0 %}
+                                                    <span class="badge bg-info">{{ appointments_count }} agendamento{{ appointments_count|pluralize }}</span>
+                                                {% else %}
+                                                    <small class="text-muted">Nenhum agendamento</small>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <small class="text-muted">-</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ link.created_at|date:"d/m/Y H:i" }}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'appointments:client_booking' link.token %}" 
+                                               class="btn btn-outline-primary" 
+                                               target="_blank" 
+                                               rel="noopener noreferrer"
+                                               title="Visualizar Link"
+                                               onclick="window.open(this.href, '_blank'); return false;">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'salons:toggle_client_link' link.id %}" 
+                                               class="btn btn-outline-{% if link.is_active %}warning{% else %}success{% endif %}"
+                                               title="{% if link.is_active %}Desativar{% else %}Ativar{% endif %}">
+                                                <i class="fas fa-{% if link.is_active %}pause{% else %}play{% endif %}"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-link display-1 text-muted mb-3"></i>
+                <h4>Nenhum link criado ainda</h4>
+                <p class="text-muted">Crie seu primeiro link de agendamento para começar a receber clientes.</p>
+                <form method="post" action="{% url 'salons:create_client_link' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Criar Primeiro Link
+                    </button>
+                </form>
+            </div>
+        </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+        // Copiar link para clipboard
+        document.querySelectorAll('.copy-link-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const linkId = this.getAttribute('data-link-id');
+                const linkInput = document.getElementById(linkId);
+                const link = this.getAttribute('data-link');
+
+                // Tentar usar a API moderna de clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(link).then(() => {
+                        showCopySuccess(this);
+                    }).catch(() => {
+                        // Fallback se a API moderna falhar
+                        fallbackCopyTextToClipboard(linkInput, this);
+                    });
+                } else {
+                    // Fallback para navegadores mais antigos
+                    fallbackCopyTextToClipboard(linkInput, this);
+                }
+            });
+        });
+
+        function fallbackCopyTextToClipboard(input, button) {
+            try {
+                input.select();
+                input.setSelectionRange(0, 99999); // Para dispositivos móveis
+                document.execCommand('copy');
+                showCopySuccess(button);
+            } catch (err) {
+                showCopyError(button);
+            }
+        }
+
+        function showCopySuccess(button) {
+            // Mostrar feedback visual no botão
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check text-success"></i>';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-primary');
+
+            setTimeout(() => {
+                button.innerHTML = originalIcon;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+            }, 2000);
+
+            // Mostrar toast de sucesso
+            showToast('Link copiado para a área de transferência!', 'success');
+        }
+
+        function showCopyError(button) {
+            showToast('Erro ao copiar. Copie manualmente o link do campo acima.', 'warning');
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} position-fixed`;
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.zIndex = '9999';
+            toast.style.maxWidth = '300px';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,290 @@
+
+{% extends 'base/base.html' %}
+
+{% block title %}Meu Cashback{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-coins text-warning me-2"></i>Meu Cashback</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'salons:owner_dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Cashback</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo do Saldo -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Saldo Disponível</h6>
+                            <h3 class="mb-0">R$ {{ balance.available_balance|floatformat:2 }}</h3>
+                        </div>
+                        <i class="fas fa-wallet fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Ganho</h6>
+                            <h3 class="mb-0">R$ {{ balance.total_earned|floatformat:2 }}</h3>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Cashback Pendente</h6>
+                            <h3 class="mb-0">R$ {{ pending_cashback|floatformat:2 }}</h3>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Sacado</h6>
+                            <h3 class="mb-0">R$ {{ balance.total_paid|floatformat:2 }}</h3>
+                        </div>
+                        <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ações</h5>
+                    <div class="d-flex gap-2">
+                        {% if balance.available_balance >= 10 %}
+                        <button type="button" class="btn btn-success" id="request-payment-btn">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Solicitar Saque (Mín. R$ 10,00)
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-success" disabled>
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Saque Mínimo: R$ 10,00
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'salons:store_products' %}" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Ver Produtos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Compras -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Histórico de Compras</h5>
+                </div>
+                <div class="card-body">
+                    {% if purchases %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Produto</th>
+                                    <th>Valor da Compra</th>
+                                    <th>% Cashback</th>
+                                    <th>Valor Cashback</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in purchases %}
+                                <tr>
+                                    <td>{{ purchase.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <strong>{{ purchase.product.brand }}</strong><br>
+                                        <small class="text-muted">{{ purchase.product.name }}</small>
+                                    </td>
+                                    <td>R$ {{ purchase.purchase_amount|floatformat:2 }}</td>
+                                    <td>{{ purchase.cashback_percentage_at_purchase }}%</td>
+                                    <td>
+                                        <span class="text-success fw-bold">
+                                            R$ {{ purchase.cashback_amount|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if purchase.status == 'confirmed' %}
+                                            <span class="badge bg-success">Confirmada</span>
+                                        {% elif purchase.status == 'pending' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% elif purchase.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejeitada</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ purchase.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma compra encontrada</h5>
+                        <p class="text-muted">Comece a comprar produtos através da nossa loja para ganhar cashback!</p>
+                        <a href="{% url 'salons:store_products' %}" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Ver Produtos
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico de Transações -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Histórico de Transações</h5>
+                </div>
+                <div class="card-body">
+                    {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if transaction.transaction_type == 'earned' %}
+                                            <span class="badge bg-success">Ganho</span>
+                                        {% elif transaction.transaction_type == 'paid' %}
+                                            <span class="badge bg-info">Pago</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ transaction.get_transaction_type_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ transaction.description }}</td>
+                                    <td>
+                                        {% if transaction.transaction_type == 'earned' %}
+                                            <span class="text-success">+R$ {{ transaction.amount|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-danger">-R$ {{ transaction.amount|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhuma transação encontrada</h5>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Saque -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Solicitação de Saque</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja solicitar o saque de <strong>R$ {{ balance.available_balance|floatformat:2 }}</strong>?</p>
+                <div class="alert alert-info">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        O pagamento será processado em até 5 dias úteis via PIX.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirm-payment-btn">Confirmar Saque</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('request-payment-btn')?.addEventListener('click', function() {
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
+});
+
+document.getElementById('confirm-payment-btn')?.addEventListener('click', function() {
+    fetch('{% url "admin_panel:request_cashback_payment" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Solicitação de saque enviada com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao processar solicitação');
+        console.error('Error:', error);
+    });
+});
+</script>
+{% endblock %}

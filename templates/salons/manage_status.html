@@ -1,0 +1,167 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Gerenciar Status - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-store me-2"></i>Gerenciar Status do Salão
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Status Atual -->
+                <div class="alert {% if salon.is_temporarily_closed %}alert-danger{% else %}alert-success{% endif %}" role="alert">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            {% if salon.is_temporarily_closed %}
+                                <i class="fas fa-times-circle fa-2x"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="alert-heading mb-1">
+                                Status Atual: {% if salon.is_temporarily_closed %}Fechado{% else %}Aberto{% endif %}
+                            </h5>
+                            {% if salon.is_temporarily_closed %}
+                                <p class="mb-0">
+                                    {% if salon.closed_until %}
+                                        O salão está fechado até {{ salon.closed_until|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        O salão está fechado indefinidamente
+                                    {% endif %}
+                                </p>
+                                {% if salon.closure_note %}
+                                    <p class="mb-0">
+                                        <strong>Motivo:</strong> {{ salon.closure_note }}
+                                    </p>
+                                {% endif %}
+                            {% else %}
+                                <p class="mb-0">O salão está aberto e aceitando agendamentos</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulário de Controle -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            {{ form.is_temporarily_closed }}
+                            <label class="form-check-label" for="{{ form.is_temporarily_closed.id_for_label }}">
+                                <strong>Fechar salão temporariamente</strong>
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            Quando marcado, nenhum novo agendamento poderá ser feito pelos clientes
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="closure-details" style="{% if not form.is_temporarily_closed.value %}display: none;{% endif %}">
+                        <label for="{{ form.closed_until.id_for_label }}" class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i>Reabrir automaticamente em (opcional)
+                        </label>
+                        {{ form.closed_until }}
+                        <div class="form-text">
+                            Deixe vazio para fechar indefinidamente. O salão reabrirá automaticamente na data/hora especificada.
+                        </div>
+                        {% if form.closed_until.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.closed_until.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4" id="closure-note" style="{% if not form.is_temporarily_closed.value %}display: none;{% endif %}">
+                        <label for="{{ form.closure_note.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Motivo do fechamento (opcional)
+                        </label>
+                        {{ form.closure_note }}
+                        <div class="form-text">
+                            Este motivo será exibido aos clientes que tentarem fazer agendamentos
+                        </div>
+                        {% if form.closure_note.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.closure_note.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Informações Adicionais -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações Importantes
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Agendamentos já confirmados não são afetados pelo fechamento
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-info me-2"></i>
+                        O salão reabrirá automaticamente se você definir uma data/hora de reabertura
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-bell text-warning me-2"></i>
+                        Clientes verão uma mensagem informando que o salão está temporariamente fechado
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const closedCheckbox = document.getElementById('{{ form.is_temporarily_closed.id_for_label }}');
+    const closureDetails = document.getElementById('closure-details');
+    const closureNote = document.getElementById('closure-note');
+    
+    function toggleClosureFields() {
+        if (closedCheckbox.checked) {
+            closureDetails.style.display = 'block';
+            closureNote.style.display = 'block';
+        } else {
+            closureDetails.style.display = 'none';
+            closureNote.style.display = 'none';
+        }
+    }
+    
+    closedCheckbox.addEventListener('change', toggleClosureFields);
+});
+</script>
+{% endblock %}

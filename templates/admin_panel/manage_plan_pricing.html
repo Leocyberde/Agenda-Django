@@ -1,0 +1,110 @@
+
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Gerenciar Preços dos Planos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>
+                    <i class="fas fa-dollar-sign me-2"></i>Gerenciar Preços dos Planos
+                </h2>
+                <p class="text-muted mb-0">Configure os valores dos planos de assinatura</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for plan in plans %}
+    <div class="col-lg-6 mb-4">
+        <div class="card admin-card">
+            <div class="card-header bg-{% if plan.plan_type == 'trial_10' %}info{% else %}primary{% endif %} text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-{% if plan.plan_type == 'trial_10' %}clock{% else %}crown{% endif %} me-2"></i>
+                    {{ plan.get_plan_type_display }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h2 class="text-{% if plan.plan_type == 'trial_10' %}info{% else %}primary{% endif %}">
+                        R$ {{ plan.price|floatformat:2 }}
+                    </h2>
+                    <p class="text-muted">{{ plan.description }}</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <p class="mb-2"><strong>Status:</strong></p>
+                        <p class="mb-3">
+                            {% if plan.is_active %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-2"><strong>Última atualização:</strong></p>
+                        <p class="mb-3">{{ plan.updated_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'admin_panel:edit_plan_pricing' plan.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>Editar Preço
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card admin-card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-exclamation-triangle text-warning display-4 mb-3"></i>
+                <h5 class="text-muted">Nenhum plano configurado</h5>
+                <p class="text-muted">Os planos padrão serão criados automaticamente.</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Informações adicionais -->
+<div class="row">
+    <div class="col-12">
+        <div class="card admin-card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações Importantes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Como funciona</h6>
+                        <ul class="mb-0">
+                            <li>Os preços configurados aqui serão exibidos na página inicial</li>
+                            <li>O plano Explorador geralmente é gratuito (R$ 0,00)</li>
+                            <li>O plano Revolucionário é o premium pago</li>
+                            <li>Mudanças são aplicadas imediatamente em todo o sistema</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">Dicas</h6>
+                        <ul class="mb-0">
+                            <li>Mantenha preços competitivos e justos</li>
+                            <li>Considere promoções sazonais</li>
+                            <li>Monitore a conversão de usuários</li>
+                            <li>Atualize as descrições regularmente</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
