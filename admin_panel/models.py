@@ -7,7 +7,7 @@ import uuid
 
 
 # class Product(models.Model):
-    """Modelo para produtos de salão com links de afiliados"""
+
     
     CATEGORY_CHOICES = [
         ('shampoo', 'Shampoo'),
