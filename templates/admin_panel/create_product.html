@@ -1,0 +1,224 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Criar Produto - Painel Administrativo{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-plus-circle me-2"></i>Criar Novo Produto</h2>
+    <a href="{% url 'admin_panel:manage_products' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card admin-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-shopping-bag me-2"></i>Informações do Produto</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label">Nome do Produto *</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="Ex: Shampoo Nutritivo Profissional">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="brand" class="form-label">Marca *</label>
+                            <input type="text" class="form-control" id="brand" name="brand" required 
+                                   placeholder="Ex: L'Oréal">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição *</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required 
+                                  placeholder="Descreva o produto, seus benefícios e características..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Categoria *</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Selecione uma categoria</option>
+                                {% for key, value in categories %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">Preço (R$) *</label>
+                            <input type="number" class="form-control" id="price" name="price" 
+                                   step="0.01" min="0" required placeholder="29.90">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cashback_percentage" class="form-label">Cashback (%) *</label>
+                            <input type="number" class="form-control" id="cashback_percentage" name="cashback_percentage" 
+                                   step="0.01" min="0" max="100" value="0.00" required placeholder="5.00">
+                            <div class="form-text">
+                                <i class="fas fa-coins text-warning me-1"></i>
+                                Percentual de cashback que o comerciante receberá após a compra confirmada
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-light h-100 d-flex align-items-center justify-content-center">
+                                <div class="text-center">
+                                    <i class="fas fa-calculator text-primary mb-2"></i>
+                                    <div class="small text-muted">Valor do Cashback</div>
+                                    <div class="fw-bold text-success" id="cashback_preview">R$ 0,00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="affiliate_link" class="form-label">Link de Afiliado *</label>
+                        <input type="url" class="form-control" id="affiliate_link" name="affiliate_link" required 
+                               placeholder="https://exemplo.com/produto?ref=afiliado">
+                        <div class="form-text">URL completa do produto com seu código de afiliado</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image_url" class="form-label">URL da Imagem</label>
+                        <input type="url" class="form-control" id="image_url" name="image_url" 
+                               placeholder="https://exemplo.com/imagem-produto.jpg">
+                        <div class="form-text">URL da imagem do produto (opcional)</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
+                                <label class="form-check-label" for="is_featured">
+                                    <i class="fas fa-star text-warning me-1"></i>Produto em Destaque
+                                </label>
+                                <div class="form-text">Produtos em destaque aparecem primeiro para os comerciantes</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    <i class="fas fa-eye text-success me-1"></i>Produto Ativo
+                                </label>
+                                <div class="form-text">Apenas produtos ativos são exibidos aos comerciantes</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Criar Produto
+                        </button>
+                        <a href="{% url 'admin_panel:manage_products' %}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card admin-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Dicas</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Link de Afiliado</h6>
+                    <p class="small text-muted">
+                        Certifique-se de usar seu link de afiliado correto para receber comissões pelas vendas.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-image text-primary me-2"></i>Imagem do Produto</h6>
+                    <p class="small text-muted">
+                        Use imagens de alta qualidade (pelo menos 300x300px) para atrair mais comerciantes.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-star text-warning me-2"></i>Produtos em Destaque</h6>
+                    <p class="small text-muted">
+                        Produtos em destaque aparecem primeiro e têm maior visibilidade.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-coins text-warning me-2"></i>Sistema de Cashback</h6>
+                    <p class="small text-muted">
+                        O cashback é pago ao comerciante após a confirmação da compra pelo cliente. 
+                        Use percentuais atrativos para incentivar vendas.
+                    </p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <small>
+                        <strong>Nota:</strong> Os produtos aparecem na seção "Loja" do painel dos comerciantes com informações de cashback destacadas.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preview da imagem
+document.getElementById('image_url').addEventListener('input', function() {
+    const url = this.value;
+    const preview = document.getElementById('image_preview');
+    
+    if (url) {
+        if (!preview) {
+            const previewDiv = document.createElement('div');
+            previewDiv.id = 'image_preview';
+            previewDiv.className = 'mt-2';
+            previewDiv.innerHTML = '<img src="' + url + '" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">';
+            this.parentNode.appendChild(previewDiv);
+        } else {
+            preview.innerHTML = '<img src="' + url + '" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">';
+        }
+    } else if (preview) {
+        preview.remove();
+    }
+});
+
+// Calculadora de cashback em tempo real
+function updateCashbackPreview() {
+    const price = parseFloat(document.getElementById('price').value) || 0;
+    const cashbackPercentage = parseFloat(document.getElementById('cashback_percentage').value) || 0;
+    const cashbackAmount = (price * cashbackPercentage) / 100;
+    
+    const preview = document.getElementById('cashback_preview');
+    preview.textContent = 'R$ ' + cashbackAmount.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    // Destacar quando há cashback
+    if (cashbackAmount > 0) {
+        preview.classList.add('text-success');
+        preview.classList.remove('text-muted');
+    } else {
+        preview.classList.add('text-muted');
+        preview.classList.remove('text-success');
+    }
+}
+
+document.getElementById('price').addEventListener('input', updateCashbackPreview);
+document.getElementById('cashback_percentage').addEventListener('input', updateCashbackPreview);
+
+// Calcular cashback inicial
+document.addEventListener('DOMContentLoaded', updateCashbackPreview);
+</script>
+{% endblock %}

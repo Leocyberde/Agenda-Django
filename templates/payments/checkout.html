@@ -1,0 +1,129 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Pagamento - {{ plan.get_plan_type_display }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Finalizar Pagamento
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Detalhes do Plano</h5>
+                        <div class="p-3 bg-light rounded">
+                            <p class="mb-2"><strong>Plano:</strong> {{ plan.get_plan_type_display }}</p>
+                            <p class="mb-2"><strong>Descrição:</strong> {{ plan.description }}</p>
+                            <p class="mb-0"><strong>Valor:</strong> <span class="text-success fs-4">R$ {{ plan.price }}</span></p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Pagamento seguro via Mercado Pago</strong><br>
+                        Clique no botão abaixo para realizar o pagamento. Você será redirecionado para a página segura do Mercado Pago.
+                    </div>
+
+                    <div class="text-center">
+                        <div id="loading-payment" class="mb-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <p class="mt-2">Carregando opções de pagamento...</p>
+                        </div>
+                        <div id="wallet_container"></div>
+                        <div id="payment-error" class="alert alert-danger d-none mt-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Erro ao carregar pagamento</strong><br>
+                            <span id="error-message"></span>
+                            <div class="mt-3">
+                                <a href="{% url 'subscriptions:detail' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar para Planos
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<script>
+    const preferenceId = '{{ preference_id }}';
+    const publicKey = '{{ mp_public_key }}';
+    
+    console.log('🔵 Iniciando checkout Mercado Pago');
+    console.log('📦 Preference ID:', preferenceId);
+    console.log('🔑 Public Key:', publicKey ? 'Configurada' : 'NÃO CONFIGURADA');
+    
+    if (!publicKey || !preferenceId) {
+        document.getElementById('loading-payment').classList.add('d-none');
+        document.getElementById('payment-error').classList.remove('d-none');
+        document.getElementById('error-message').textContent = 
+            'Configuração de pagamento inválida. Por favor, entre em contato com o suporte.';
+        console.error('❌ Credenciais do Mercado Pago não configuradas');
+    } else {
+        try {
+            const mp = new MercadoPago(publicKey, {
+                locale: 'pt-BR'
+            });
+            
+            console.log('✅ SDK Mercado Pago inicializado');
+            
+            mp.bricks().create("wallet", "wallet_container", {
+                initialization: {
+                    preferenceId: preferenceId,
+                },
+                customization: {
+                    texts: {
+                        valueProp: 'smart_option',
+                    },
+                },
+                callbacks: {
+                    onReady: () => {
+                        console.log('✅ Wallet carregado com sucesso');
+                        document.getElementById('loading-payment').classList.add('d-none');
+                    },
+                    onError: (error) => {
+                        console.error('❌ Erro no Wallet:', error);
+                        document.getElementById('loading-payment').classList.add('d-none');
+                        document.getElementById('payment-error').classList.remove('d-none');
+                        document.getElementById('error-message').textContent = 
+                            error.message || 'Não foi possível carregar as opções de pagamento. Tente novamente mais tarde.';
+                    }
+                }
+            }).catch(error => {
+                console.error('❌ Erro ao criar Wallet:', error);
+                document.getElementById('loading-payment').classList.add('d-none');
+                document.getElementById('payment-error').classList.remove('d-none');
+                document.getElementById('error-message').textContent = 
+                    'Não foi possível criar o botão de pagamento. Verifique sua conexão e tente novamente.';
+            });
+            
+            setTimeout(() => {
+                if (!document.getElementById('loading-payment').classList.contains('d-none')) {
+                    console.warn('⚠️ Timeout: Wallet demorou muito para carregar');
+                    document.getElementById('loading-payment').classList.add('d-none');
+                    document.getElementById('payment-error').classList.remove('d-none');
+                    document.getElementById('error-message').textContent = 
+                        'O carregamento está demorando mais que o esperado. Por favor, recarregue a página ou tente novamente mais tarde.';
+                }
+            }, 15000);
+            
+        } catch (error) {
+            console.error('❌ Erro ao inicializar Mercado Pago:', error);
+            document.getElementById('loading-payment').classList.add('d-none');
+            document.getElementById('payment-error').classList.remove('d-none');
+            document.getElementById('error-message').textContent = 
+                'Erro ao inicializar sistema de pagamento. Por favor, tente novamente mais tarde.';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Link de Agendamento - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-link me-2"></i>Link de Agendamento
+                </h2>
+                <p class="text-muted mb-0">Gerencie o link público para agendamentos do {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        {% if booking_token %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-link me-2"></i>Seu Link de Agendamento
+                    {% if booking_token.is_active %}
+                        <span class="badge bg-success ms-2">Ativo</span>
+                    {% else %}
+                        <span class="badge bg-secondary ms-2">Inativo</span>
+                    {% endif %}
+                </h5>
+
+                <div class="input-group mb-3">
+                    {% url 'salons:public_booking' booking_token.token as booking_url %}
+                    <input type="text" class="form-control" 
+                           value="{{ request.scheme }}://{{ request.get_host }}{{ booking_url }}"
+                           id="bookingUrl" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard()">
+                        <i class="fas fa-copy me-1"></i>Copiar
+                    </button>
+                </div>
+
+                <p class="card-text">
+                    <small class="text-muted">
+                        Link criado em: {{ booking_token.created_at|date:"d/m/Y H:i" }}
+                    </small>
+                </p>
+
+                <div class="d-flex gap-2">
+                    <form method="post" action="{% url 'salons:toggle_booking_link' %}" class="d-inline">
+                        {% csrf_token %}
+                        {% if booking_token.is_active %}
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-pause me-2"></i>Desativar Link
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-play me-2"></i>Ativar Link
+                            </button>
+                        {% endif %}
+                    </form>
+
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-sync me-2"></i>Gerar Novo Link
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-info-circle me-2"></i>Como funciona?
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-1 text-primary me-2"></i>Gere o Link</h6>
+                        <p class="text-muted">Clique em "Gerar Link de Agendamento" para criar um link único para seu salão.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-2 text-primary me-2"></i>Compartilhe</h6>
+                        <p class="text-muted">Copie e compartilhe o link com seus clientes por WhatsApp, redes sociais ou site.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-3 text-primary me-2"></i>Clientes Agendam</h6>
+                        <p class="text-muted">Os clientes podem agendar serviços diretamente pelo link, sem precisar de cadastro.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-4 text-primary me-2"></i>Gerencie</h6>
+                        <p class="text-muted">Você pode ativar/desativar o link ou gerar um novo a qualquer momento.</p>
+                    </div>
+                </div>
+
+                {% if not booking_token %}
+                <div class="text-center mt-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-link me-2"></i>Gerar Link de Agendamento
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const bookingUrl = document.getElementById('bookingUrl');
+    bookingUrl.select();
+    bookingUrl.setSelectionRange(0, 99999); // Para dispositivos móveis
+
+    try {
+        document.execCommand('copy');
+
+        // Feedback visual
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-success');
+
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-secondary');
+        }, 2000);
+
+    } catch (err) {
+        console.error('Erro ao copiar: ', err);
+        alert('Erro ao copiar o link. Por favor, copie manualmente.');
+    }
+}
+</script>
+{% endblock %}

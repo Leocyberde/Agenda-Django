@@ -1,0 +1,162 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Minha Assinatura - Sistema de Agendamento{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-crown me-2"></i>Minha Assinatura
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if subscription.is_active %}
+                    <div class="alert alert-success" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-check-circle me-2"></i>Assinatura Ativa
+                        </h5>
+                        <p class="mb-0">Sua assinatura está ativa e funcionando normalmente.</p>
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-times-circle me-2"></i>Assinatura Expirada
+                        </h5>
+                        <p class="mb-0">Sua assinatura expirou. Renove para continuar usando o sistema.</p>
+                    </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Informações da Assinatura</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Plano:</strong></td>
+                                <td>{{ subscription.get_plan_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{% if subscription.is_active %}success{% else %}danger{% endif %}">
+                                        {{ subscription.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data de Início:</strong></td>
+                                <td>{{ subscription.start_date|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data de Término:</strong></td>
+                                <td>{{ subscription.end_date|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dias Restantes:</strong></td>
+                                <td>
+                                    {% if subscription.is_active %}
+                                        <span class="text-{% if subscription.days_remaining <= 3 %}danger{% elif subscription.days_remaining <= 7 %}warning{% else %}success{% endif %}">
+                                            {{ subscription.days_remaining }} dia{{ subscription.days_remaining|pluralize }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-danger">Expirado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Opções de Renovação</h6>
+                        
+                        {% if subscription.plan_type == 'trial_10' %}
+                            <div class="card mb-3 border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="fas fa-crown me-2"></i>Plano Revolucionário
+                                    </h6>
+                                    <p class="card-text">Acesso completo por 30 dias</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="h5 text-success mb-0">R$ 49,90</span>
+                                        <small class="text-muted">Pagamento único</small>
+                                    </div>
+                                    {% for plan in available_plans %}
+                                        {% if plan.plan_type == 'vip_30' %}
+                                            <a href="{% url 'payments:gerar_pix' plan.id %}" class="btn btn-success w-100">
+                                                <i class="fab fa-pix me-2"></i>Pagar com PIX - R$ {{ plan.price }}
+                                            </a>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if subscription.plan_type == 'vip_30' %}
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">Renovar Plano Revolucionário</h6>
+                                <p class="card-text">{{ subscription.get_plan_type_display }}</p>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="h6 text-primary mb-0">R$ 49,90</span>
+                                    <small class="text-muted">+ 30 dias</small>
+                                </div>
+                                {% for plan in available_plans %}
+                                    {% if plan.plan_type == 'vip_30' %}
+                                        <a href="{% url 'payments:gerar_pix' plan.id %}" class="btn btn-primary w-100">
+                                            <i class="fab fa-pix me-2"></i>Renovar com PIX
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if not subscription %}
+                    <!-- Planos disponíveis para novos usuários -->
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title text-success">Plano Explorador</h6>
+                                <p class="card-text">Teste gratuito por 10 dias</p>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="h6 text-success mb-0">GRÁTIS</span>
+                                    <small class="text-muted">10 dias</small>
+                                </div>
+                                <form method="post" action="{% url 'subscriptions:start_trial' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="fas fa-play me-2"></i>Iniciar Teste Gratuito
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">Plano Revolucionário</h6>
+                                <p class="card-text">Acesso completo por 30 dias</p>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="h6 text-primary mb-0">R$ 49,90</span>
+                                    <small class="text-muted">30 dias</small>
+                                </div>
+                                {% for plan in available_plans %}
+                                    {% if plan.plan_type == 'vip_30' %}
+                                        <a href="{% url 'payments:gerar_pix' plan.id %}" class="btn btn-primary w-100">
+                                            <i class="fab fa-pix me-2"></i>Assinar com PIX - R$ {{ plan.price }}
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

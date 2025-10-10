@@ -1,0 +1,1838 @@
+{% extends 'base/public_base.html' %}
+
+{% block title %}
+    {% if is_existing_client %}
+        Meus Agendamentos - Agende sua Beleza
+    {% else %}
+        Agendamento - Agende sua Beleza
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Ultra Modern Hero Section -->
+<div class="hero-section-minimal">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-10">
+                <!-- Ultra Modern Salon Header Card -->
+                <div class="salon-header-card floating" data-aos="fade-up" data-aos-delay="100">
+                    <div class="glass-card p-4">
+                        <div class="text-center">
+                            <div class="salon-avatar-wrapper">
+                                {% if salon.photo %}
+                                    <div class="salon-avatar floating-slow">
+                                        <img src="{{ salon.photo.url }}" alt="{{ salon.name }}" class="salon-image">
+                                        <div class="avatar-glow"></div>
+                                    </div>
+                                {% else %}
+                                    <div class="salon-avatar floating-slow default-avatar">
+                                        <i class="fas fa-store fa-3x text-primary"></i>
+                                        <div class="avatar-glow"></div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <h1 class="salon-title gradient-text mb-3">{{ salon.name }}</h1>
+                            <p class="salon-address">
+                                <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                {{ salon.address }}, {{ salon.city }} - {{ salon.state }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Ultra Modern Salon Status -->
+                {% if salon.is_temporarily_closed %}
+                    <div class="salon-status-card closed floating" data-aos="fade-up" data-aos-delay="300">
+                        <div class="glass-card danger-theme p-4">
+                            <div class="status-content text-center">
+                                <div class="status-icon-wrapper mb-4">
+                                    <div class="status-icon danger floating-slow">
+                                        <i class="fas fa-store-slash fa-4x"></i>
+                                        <div class="icon-pulse"></div>
+                                    </div>
+                                </div>
+                                <h3 class="status-title mb-3">Salão Temporariamente Fechado</h3>
+                                <div class="status-details">
+                                    {% if salon.closed_until %}
+                                        <div class="status-info mb-3">
+                                            <div class="info-label">Reabrindo em:</div>
+                                            <div class="info-value">
+                                                <i class="fas fa-calendar-alt me-2"></i>
+                                                {{ salon.closed_until|date:"d/m/Y" }} às {{ salon.closed_until|time:"H:i" }}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="status-info mb-3">
+                                            <div class="info-value">Fechado por tempo indeterminado</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if salon.closure_note %}
+                                        <div class="status-note mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            {{ salon.closure_note }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="status-message">
+                                        <small>Não é possível fazer novos agendamentos no momento. Tente novamente mais tarde.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+            {% if not salon.is_temporarily_closed %}
+                {% if pending_fees %}
+                    <!-- Alerta de Multas Pendentes -->
+                    <div class="pending-fees-alert" data-aos="fade-up" data-aos-delay="350">
+                        <div class="glass-card danger-theme p-4">
+                            <div class="alert-content">
+                                <div class="alert-icon-wrapper mb-3">
+                                    <div class="alert-icon danger floating-slow">
+                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                        <div class="icon-pulse"></div>
+                                    </div>
+                                </div>
+                                <h4 class="alert-title mb-3 text-warning">Multas de Cancelamento Pendentes</h4>
+                                <div class="fees-list mb-3">
+                                    {% for fee in pending_fees %}
+                                        <div class="fee-item mb-3 p-3 rounded" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6 class="mb-1">{{ fee.appointment.service.name }}</h6>
+                                                    <small class="text-muted">
+                                                        Agendamento: {{ fee.appointment.appointment_date|date:"d/m/Y" }} às {{ fee.appointment.appointment_time|time:"H:i" }}
+                                                    </small><br>
+                                                    <small class="text-muted">
+                                                        Cancelado em: {{ fee.created_at|date:"d/m/Y H:i" }}
+                                                        {% if fee.appointment.employee %}
+                                                            | Funcionário: {{ fee.appointment.employee.user.get_full_name }}
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    <div class="fee-amount text-warning fw-bold">R$ {{ fee.amount|floatformat:2 }}</div>
+                                                    <small class="text-muted">({{ fee.fee_percentage|floatformat:0 }}% de R$ {{ fee.service_price|floatformat:2 }})</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="total-fees mb-3 p-3 rounded" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3);">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <strong>Total de multas pendentes:</strong>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <strong class="text-danger fs-5">R$ {{ pending_fees_total|floatformat:2 }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="contact-info text-center">
+                                    <p class="mb-2"><strong>Para regularizar a situação, entre em contato:</strong></p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-phone me-2"></i>{{ salon.phone }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-envelope me-2"></i>{{ salon.email }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                {% if is_existing_client %}
+                    <!-- Ultra Modern Client Dashboard -->
+                    <div class="modern-dashboard-grid" data-aos="fade-up" data-aos-delay="400">
+                        <!-- Modern Appointment History -->
+                        <div class="appointment-history-section">
+                            <div class="glass-card-advanced floating">
+                                <div class="card-header-modern">
+                                    <div class="header-icon">
+                                        <i class="fas fa-history"></i>
+                                    </div>
+                                    <h4 class="header-title gradient-text">Meus Agendamentos</h4>
+                                </div>
+                                <div class="card-body-modern">
+                                    {% if appointments %}
+                                        <div class="appointments-list">
+                                            {% for appointment in appointments %}
+                                                <div class="appointment-card-modern" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:4 }}00">
+                                                    <div class="appointment-header">
+                                                        <div class="service-info">
+                                                            <h6 class="service-name">{{ appointment.service.name }}</h6>
+                                                            <div class="appointment-details">
+                                                                <span class="detail-item">
+                                                                    <i class="fas fa-calendar-alt"></i>
+                                                                    {{ appointment.appointment_date|date:"d/m/Y" }}
+                                                                </span>
+                                                                <span class="detail-item">
+                                                                    <i class="fas fa-clock"></i>
+                                                                    {{ appointment.appointment_time|time:"H:i" }}
+                                                                </span>
+                                                                {% if appointment.employee %}
+                                                                    <span class="detail-item">
+                                                                        <i class="fas fa-user-tie"></i>
+                                                                        {{ appointment.employee.user.get_full_name }}
+                                                                    </span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="appointment-status">
+                                                            {% if appointment.status == 'scheduled' %}
+                                                                <div class="status-badge warning floating-slow">
+                                                                    <div class="badge-icon"><i class="fas fa-clock"></i></div>
+                                                                    <span>Pendente</span>
+                                                                </div>
+                                                            {% elif appointment.status == 'confirmed' %}
+                                                                <div class="status-badge success floating-slow">
+                                                                    <div class="badge-icon"><i class="fas fa-check"></i></div>
+                                                                    <span>Confirmado</span>
+                                                                </div>
+                                                            {% elif appointment.status == 'rescheduled' %}
+                                                                <div class="status-badge info floating-slow">
+                                                                    <div class="badge-icon"><i class="fas fa-sync"></i></div>
+                                                                    <span>Reagendado</span>
+                                                                </div>
+                                                            {% elif appointment.status == 'completed' %}
+                                                                <div class="status-badge primary floating-slow">
+                                                                    <div class="badge-icon"><i class="fas fa-check-circle"></i></div>
+                                                                    <span>Concluído</span>
+                                                                </div>
+                                                            {% elif appointment.status == 'cancelled' %}
+                                                                <div class="status-badge secondary floating-slow">
+                                                                    <div class="badge-icon"><i class="fas fa-times"></i></div>
+                                                                    <span>Cancelado</span>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+
+                                                    {% if appointment.status == 'rescheduled' and appointment.rescheduled_date %}
+                                                        <div class="reschedule-info-modern">
+                                                            <div class="reschedule-content">
+                                                                <div class="reschedule-header">
+                                                                    <i class="fas fa-calendar-check me-2"></i>
+                                                                    <strong>Nova data proposta:</strong>
+                                                                </div>
+                                                                <div class="reschedule-details">
+                                                                    <span class="new-date">
+                                                                        {{ appointment.rescheduled_date|date:"d/m/Y" }} às {{ appointment.rescheduled_time|time:"H:i" }}
+                                                                    </span>
+                                                                    {% if appointment.rescheduled_reason %}
+                                                                        <div class="reschedule-reason">
+                                                                            <strong>Motivo:</strong> {{ appointment.rescheduled_reason }}
+                                                                        </div>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="reschedule-actions">
+                                                                    <a href="{% url 'appointments:confirm_reschedule' link.token appointment.id %}"
+                                                                       class="btn-modern success me-2">
+                                                                        <i class="fas fa-check me-1"></i>Aceitar
+                                                                        <span class="btn-glow"></span>
+                                                                    </a>
+                                                                    <a href="{% url 'appointments:reject_reschedule' link.token appointment.id %}"
+                                                                       class="btn-modern danger">
+                                                                        <i class="fas fa-times me-1"></i>Recusar
+                                                                        <span class="btn-glow"></span>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+
+                                                    <!-- Botão de cancelamento -->
+                                                    {% if appointment.status == 'scheduled' or appointment.status == 'confirmed' %}
+                                                        {% if appointment.can_be_cancelled %}
+                                                            <div class="appointment-actions mt-3">
+                                                                <form method="post" action="{% url 'appointments:cancel_appointment' link.token appointment.id %}"
+                                                                      onsubmit="return confirm('Tem certeza que deseja cancelar este agendamento?{% if salon.cancellation_policy_enabled and appointment.status == 'confirmed' %} Atenção: Cancelamentos com menos de {{ salon.cancellation_hours_threshold }} horas de antecedência terão multa de {{ salon.get_cancellation_fee_percentage_display }}%.{% endif %}');">
+                                                                    {% csrf_token %}
+                                                                    <button type="submit" class="btn-modern danger sm">
+                                                                        <i class="fas fa-times-circle me-1"></i>Cancelar Agendamento
+                                                                        <span class="btn-glow"></span>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endif %}
+
+                                                    <!-- Mostrar multa se existir -->
+                                                    {% if appointment.cancellation_fee %}
+                                                        <div class="cancellation-fee-info mt-3">
+                                                            <div class="alert alert-warning">
+                                                                <div class="mb-2">
+                                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                                    <strong>Multa de Cancelamento:</strong> R$ {{ appointment.cancellation_fee.amount|floatformat:2 }}
+                                                                    <small>({{ appointment.cancellation_fee.fee_percentage|floatformat:0 }}% de R$ {{ appointment.cancellation_fee.service_price|floatformat:2 }})</small>
+                                                                </div>
+                                                                <div class="row text-sm">
+                                                                    <div class="col-md-6">
+                                                                        <strong>Cancelado em:</strong><br>
+                                                                        <small>{{ appointment.cancellation_fee.cancelled_at|date:"d/m/Y" }} às {{ appointment.cancellation_fee.cancelled_at|time:"H:i" }}</small>
+                                                                    </div>
+                                                                    {% if appointment.cancellation_fee.cancelled_by_employee %}
+                                                                    <div class="col-md-6">
+                                                                        <strong>Funcionário:</strong><br>
+                                                                        <small>{{ appointment.cancellation_fee.cancelled_by_employee.user.get_full_name }}</small>
+                                                                    </div>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <small><strong>Status:</strong> {% if appointment.cancellation_fee.is_paid %}Paga{% else %}Pendente{% endif %}</small>
+                                                                    <br>
+                                                                    <small><strong>Cancelado:</strong> {{ appointment.cancellation_fee.hours_before_appointment|floatformat:1 }}h antes do agendamento</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="empty-state">
+                                            <div class="empty-icon">
+                                                <i class="fas fa-calendar-times fa-3x"></i>
+                                            </div>
+                                            <p class="empty-text">Nenhum agendamento ainda.</p>
+                                            <p class="empty-subtitle">Faça seu primeiro agendamento ao lado!</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ultra Modern Booking Form -->
+                        <div class="booking-form-section">
+                            <div class="glass-card-advanced floating">
+                                <div class="card-header-modern">
+                                    <div class="header-icon">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </div>
+                                    <h4 class="header-title gradient-text">Novo Agendamento</h4>
+                                </div>
+                                <div class="card-body-modern">
+                                    <form method="post" class="modern-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="new_appointment">
+
+                                        <div class="form-group-modern">
+                                            <div class="floating-input-group">
+                                                <select name="service_id" id="service_id" class="floating-select" required>
+                                                    <option value=""></option>
+                                                    {% for service in services %}
+                                                        <option value="{{ service.id }}">
+                                                            {{ service.name }} - R$ {{ service.price }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <label class="floating-label" for="service_id">
+                                                    <i class="fas fa-cut me-2"></i>Serviço *
+                                                </label>
+                                                <div class="input-border"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group-modern">
+                                            <div class="floating-input-group">
+                                                <select name="employee_id" id="employee_id" class="floating-select">
+                                                    <option value=""></option>
+                                                    {% for employee in employees %}
+                                                        <option value="{{ employee.id }}">
+                                                            {{ employee.user.get_full_name }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <label class="floating-label" for="employee_id">
+                                                    <i class="fas fa-user-tie me-2"></i>Profissional
+                                                </label>
+                                                <div class="input-border"></div>
+                                                <div class="form-help">Deixe vazio para qualquer profissional disponível</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row-modern">
+                                            <div class="form-group-modern half">
+                                                <div class="floating-input-group">
+                                                    <input type="date" name="appointment_date" id="appointment_date"
+                                                           class="floating-input" min="{{ today|date:'Y-m-d' }}" required>
+                                                    <label class="floating-label" for="appointment_date">
+                                                        <i class="fas fa-calendar-alt me-2"></i>Data *
+                                                    </label>
+                                                    <div class="input-border"></div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group-modern half">
+                                                <div class="floating-input-group">
+                                                    <select name="appointment_time" id="appointment_time" class="floating-select" required>
+                                                        <option value=""></option>
+                                                    </select>
+                                                    <label class="floating-label" for="appointment_time">
+                                                        <i class="fas fa-clock me-2"></i>Horário *
+                                                    </label>
+                                                    <div class="input-border"></div>
+                                                    <div class="loading-indicator" id="time-loading" style="display: none;">
+                                                        <i class="fas fa-spinner fa-spin me-1"></i>
+                                                        <span>Carregando horários...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <script>
+                                    // Função para buscar horários disponíveis
+                                    function loadAvailableSlots() {
+                                        const serviceId = document.getElementById('service_id').value;
+                                        const employeeId = document.getElementById('employee_id').value;
+                                        const appointmentDate = document.getElementById('appointment_date').value;
+                                        const timeSelect = document.getElementById('appointment_time');
+                                        const loadingText = document.getElementById('time-loading');
+
+                                        // Limpar horários anteriores
+                                        timeSelect.innerHTML = '<option value="">Selecione um horário</option>';
+
+                                        if (!serviceId || !appointmentDate) {
+                                            timeSelect.innerHTML = '<option value="">Primeiro selecione o serviço e a data</option>';
+                                            return;
+                                        }
+
+                                        // Mostrar loading
+                                        loadingText.style.display = 'block';
+                                        timeSelect.disabled = true;
+
+                                        // Fazer requisição AJAX
+                                        const url = `{% url 'appointments:get_available_slots' link.token %}?service_id=${serviceId}&employee_id=${employeeId}&date=${appointmentDate}`;
+
+                                        fetch(url)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                loadingText.style.display = 'none';
+                                                timeSelect.disabled = false;
+
+                                                if (data.error) {
+                                                    timeSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
+                                                    return;
+                                                }
+
+                                                if (data.slots && data.slots.length > 0) {
+                                                    timeSelect.innerHTML = '<option value="">Selecione um horário</option>';
+                                                    data.slots.forEach(slot => {
+                                                        const option = document.createElement('option');
+                                                        option.value = slot;
+                                                        option.textContent = slot;
+                                                        timeSelect.appendChild(option);
+                                                    });
+                                                } else {
+                                                    timeSelect.innerHTML = '<option value="">Nenhum horário disponível</option>';
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Erro:', error);
+                                                loadingText.style.display = 'none';
+                                                timeSelect.disabled = false;
+                                                timeSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
+                                            });
+                                    }
+
+                                    // Função para buscar horários disponíveis (cliente novo)
+                                    function loadAvailableSlotsNew() {
+                                        const serviceId = document.getElementById('service_id_new').value;
+                                        const employeeId = document.getElementById('employee_id_new').value;
+                                        const appointmentDate = document.getElementById('appointment_date_new').value;
+                                        const timeSelect = document.getElementById('appointment_time_new');
+                                        const loadingText = document.getElementById('time-loading-new');
+
+                                        // Limpar horários anteriores
+                                        timeSelect.innerHTML = '<option value="">Selecione um horário</option>';
+
+                                        if (!serviceId || !appointmentDate) {
+                                            timeSelect.innerHTML = '<option value="">Primeiro selecione o serviço e a data</option>';
+                                            return;
+                                        }
+
+                                        // Mostrar loading
+                                        loadingText.style.display = 'block';
+                                        timeSelect.disabled = true;
+
+                                        // Fazer requisição AJAX
+                                        const url = `{% url 'appointments:get_available_slots' link.token %}?service_id=${serviceId}&employee_id=${employeeId}&date=${appointmentDate}`;
+
+                                        fetch(url)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                loadingText.style.display = 'none';
+                                                timeSelect.disabled = false;
+
+                                                if (data.error) {
+                                                    timeSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
+                                                    return;
+                                                }
+
+                                                if (data.slots && data.slots.length > 0) {
+                                                    timeSelect.innerHTML = '<option value="">Selecione um horário</option>';
+                                                    data.slots.forEach(slot => {
+                                                        const option = document.createElement('option');
+                                                        option.value = slot;
+                                                        option.textContent = slot;
+                                                        timeSelect.appendChild(option);
+                                                    });
+                                                } else {
+                                                    timeSelect.innerHTML = '<option value="">Nenhum horário disponível</option>';
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Erro:', error);
+                                                loadingText.style.display = 'none';
+                                                timeSelect.disabled = false;
+                                                timeSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
+                                            });
+                                    }
+
+                                    // Adicionar eventos para recarregar horários
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        // Cliente existente
+                                        if (document.getElementById('service_id')) {
+                                            document.getElementById('service_id').addEventListener('change', loadAvailableSlots);
+                                            document.getElementById('employee_id').addEventListener('change', loadAvailableSlots);
+                                            document.getElementById('appointment_date').addEventListener('change', loadAvailableSlots);
+                                        }
+
+                                        // Cliente novo
+                                        if (document.getElementById('service_id_new')) {
+                                            document.getElementById('service_id_new').addEventListener('change', loadAvailableSlotsNew);
+                                            document.getElementById('employee_id_new').addEventListener('change', loadAvailableSlotsNew);
+                                            document.getElementById('appointment_date_new').addEventListener('change', loadAvailableSlotsNew);
+                                        }
+                                    });
+                                    </script>
+
+                                        <div class="form-group-modern">
+                                            <div class="floating-input-group">
+                                                <textarea name="notes" id="notes" class="floating-textarea" rows="3"
+                                                          placeholder=" "></textarea>
+                                                <label class="floating-label" for="notes">
+                                                    <i class="fas fa-comment-alt me-2"></i>Observações
+                                                </label>
+                                                <div class="input-border"></div>
+                                                <div class="form-help">Informações adicionais sobre o agendamento</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-submit-section">
+                                            <button type="submit" class="btn-hero-primary w-100 floating" id="submit-btn">
+                                                <i class="fas fa-calendar-plus me-2"></i>
+                                                <span>Agendar Serviço</span>
+                                                <span class="btn-glow"></span>
+                                            </button>
+                                        </div>
+                                </form>
+
+                                <script>
+                                // Debug para formulário de cliente existente
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const form = document.querySelector('form[method="post"]');
+                                    const submitBtn = document.getElementById('submit-btn');
+
+                                    if (form && submitBtn) {
+                                        form.addEventListener('submit', function(e) {
+                                            console.log('Formulário sendo enviado...');
+                                            console.log('Service ID:', document.getElementById('service_id').value);
+                                            console.log('Employee ID:', document.getElementById('employee_id').value);
+                                            console.log('Date:', document.getElementById('appointment_date').value);
+                                            console.log('Time:', document.getElementById('appointment_time').value);
+
+                                            // Desabilitar botão para evitar duplo clique
+                                            submitBtn.disabled = true;
+                                            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+
+                                            // Reabilitar após 3 segundos caso algo dê errado
+                                            setTimeout(() => {
+                                                submitBtn.disabled = false;
+                                                submitBtn.innerHTML = '<i class="fas fa-calendar-plus me-2"></i>Agendar';
+                                            }, 3000);
+                                        });
+                                    }
+                                });
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                    <!-- Ultra Modern New Client Form -->
+                    <div class="new-client-section" data-aos="fade-up" data-aos-delay="400">
+                        <div class="glass-card-advanced floating">
+                            <div class="card-header-modern">
+                                <div class="header-icon">
+                                    <i class="fas fa-user-plus"></i>
+                                </div>
+                                <h4 class="header-title gradient-text">Dados e Primeiro Agendamento</h4>
+                                <p class="header-subtitle">Complete seus dados para realizar o agendamento</p>
+                            </div>
+                            <div class="card-body-modern">
+                                <form method="post" class="modern-form">
+                                    {% csrf_token %}
+
+                                    <!-- Client Data Section -->
+                                    <div class="form-section-header">
+                                        <h6 class="section-title gradient-text">Seus Dados</h6>
+                                        <div class="section-divider"></div>
+                                    </div>
+
+                                    <div class="form-row-modern">
+                                        <div class="form-group-modern half">
+                                            <div class="floating-input-group">
+                                                <input type="text" name="client_name" id="client_name"
+                                                       class="floating-input" placeholder=" " required>
+                                                <label class="floating-label" for="client_name">
+                                                    <i class="fas fa-user me-2"></i>Nome completo *
+                                                </label>
+                                                <div class="input-border"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group-modern half">
+                                            <div class="floating-input-group">
+                                                <input type="email" name="client_email" id="client_email"
+                                                       class="floating-input" placeholder=" " required>
+                                                <label class="floating-label" for="client_email">
+                                                    <i class="fas fa-envelope me-2"></i>Email *
+                                                </label>
+                                                <div class="input-border"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group-modern">
+                                        <div class="floating-input-group">
+                                            <input type="tel" name="client_phone" id="client_phone"
+                                                   class="floating-input" placeholder=" ">
+                                            <label class="floating-label" for="client_phone">
+                                                <i class="fas fa-phone me-2"></i>Telefone
+                                            </label>
+                                            <div class="input-border"></div>
+                                            <div class="form-help">Formato: (11) 99999-9999</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Appointment Data Section -->
+                                    <div class="form-section-header">
+                                        <h6 class="section-title gradient-text">Agendamento</h6>
+                                        <div class="section-divider"></div>
+                                    </div>
+
+                                    <div class="form-group-modern">
+                                        <div class="floating-input-group">
+                                            <select name="service_id" id="service_id_new" class="floating-select" required>
+                                                <option value=""></option>
+                                                {% for service in services %}
+                                                    <option value="{{ service.id }}">
+                                                        {{ service.name }} - R$ {{ service.price }}
+                                                        {% if service.description %}
+                                                            ({{ service.description }})
+                                                        {% endif %}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <label class="floating-label" for="service_id_new">
+                                                <i class="fas fa-cut me-2"></i>Serviço *
+                                            </label>
+                                            <div class="input-border"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group-modern">
+                                        <div class="floating-input-group">
+                                            <select name="employee_id" id="employee_id_new" class="floating-select">
+                                                <option value=""></option>
+                                                {% for employee in employees %}
+                                                    <option value="{{ employee.id }}">
+                                                        {{ employee.user.get_full_name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <label class="floating-label" for="employee_id_new">
+                                                <i class="fas fa-user-tie me-2"></i>Profissional
+                                            </label>
+                                            <div class="input-border"></div>
+                                            <div class="form-help">Deixe vazio para qualquer profissional disponível</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row-modern">
+                                        <div class="form-group-modern half">
+                                            <div class="floating-input-group">
+                                                <input type="date" name="appointment_date" id="appointment_date_new"
+                                                       class="floating-input" min="{{ today|date:'Y-m-d' }}" required>
+                                                <label class="floating-label" for="appointment_date_new">
+                                                    <i class="fas fa-calendar-alt me-2"></i>Data *
+                                                </label>
+                                                <div class="input-border"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group-modern half">
+                                            <div class="floating-input-group">
+                                                <select name="appointment_time" id="appointment_time_new" class="floating-select" required>
+                                                    <option value=""></option>
+                                                </select>
+                                                <label class="floating-label" for="appointment_time_new">
+                                                    <i class="fas fa-clock me-2"></i>Horário *
+                                                </label>
+                                                <div class="input-border"></div>
+                                                <div class="loading-indicator" id="time-loading-new" style="display: none;">
+                                                    <i class="fas fa-spinner fa-spin me-1"></i>
+                                                    <span>Carregando horários...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group-modern">
+                                        <div class="floating-input-group">
+                                            <textarea name="notes" id="notes_new" class="floating-textarea" rows="3"
+                                                      placeholder=" "></textarea>
+                                            <label class="floating-label" for="notes_new">
+                                                <i class="fas fa-comment-alt me-2"></i>Observações
+                                            </label>
+                                            <div class="input-border"></div>
+                                            <div class="form-help">Informações adicionais sobre o agendamento</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-submit-section">
+                                        <button type="submit" class="btn-hero-primary w-100 floating" id="submit-btn-new">
+                                            <i class="fas fa-calendar-plus me-2"></i>
+                                            <span>Confirmar Agendamento</span>
+                                            <span class="btn-glow"></span>
+                                        </button>
+                                    </div>
+                        </form>
+
+                        <script>
+                        // Debug para formulário de cliente novo
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const formNew = document.querySelector('form[method="post"]:not([action])');
+                            const submitBtnNew = document.getElementById('submit-btn-new');
+
+                            if (formNew && submitBtnNew) {
+                                formNew.addEventListener('submit', function(e) {
+                                    console.log('Formulário de cliente novo sendo enviado...');
+                                    console.log('Client Name:', document.getElementById('client_name').value);
+                                    console.log('Client Email:', document.getElementById('client_email').value);
+                                    console.log('Service ID:', document.getElementById('service_id_new').value);
+                                    console.log('Employee ID:', document.getElementById('employee_id_new').value);
+                                    console.log('Date:', document.getElementById('appointment_date_new').value);
+                                    console.log('Time:', document.getElementById('appointment_time_new').value);
+
+                                    // Desabilitar botão para evitar duplo clique
+                                    submitBtnNew.disabled = true;
+                                    submitBtnNew.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+
+                                    // Reabilitar após 3 segundos caso algo dê errado
+                                    setTimeout(() => {
+                                        submitBtnNew.disabled = false;
+                                        submitBtnNew.innerHTML = '<i class="fas fa-calendar-plus me-2"></i>Confirmar Agendamento';
+                                    }, 3000);
+                                });
+                            }
+                        });
+                        </script>
+                    </div>
+                </div>
+
+                <!-- Ultra Modern Salon Information -->
+                <div class="salon-info-section" data-aos="fade-up" data-aos-delay="600">
+                    <div class="glass-card-advanced floating">
+                        <div class="card-header-modern">
+                            <div class="header-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <h4 class="header-title gradient-text">Informações do Salão</h4>
+                        </div>
+                        <div class="card-body-modern">
+                            <div class="salon-info-grid">
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <h6 class="info-title">Endereço</h6>
+                                        <p class="info-text">{{ salon.address }}</p>
+                                        <p class="info-text">{{ salon.city }} - {{ salon.state }}, {{ salon.zip_code }}</p>
+                                    </div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <h6 class="info-title">Contato</h6>
+                                        <p class="info-text">{{ salon.phone }}</p>
+                                        <p class="info-text">{{ salon.email }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if salon.description %}
+                                <div class="salon-description">
+                                    <div class="description-header">
+                                        <i class="fas fa-quote-left me-2"></i>
+                                        <h6>Sobre nós</h6>
+                                    </div>
+                                    <p class="description-text">{{ salon.description }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* ==========================================================================
+   Ultra Modern Client Booking Page Styles
+   Glassmorphism, Gradients, and Advanced Animations
+   ========================================================================== */
+
+/* Hero Section */
+.hero-section-minimal {
+    background: var(--bg-primary);
+    min-height: 40vh;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem 0;
+}
+
+/* Salon Header */
+.salon-header-card {
+    margin-bottom: 2rem;
+}
+
+.salon-avatar-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.salon-avatar {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 2px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px var(--glass-shadow);
+}
+
+.salon-avatar .salon-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.salon-avatar.default-avatar {
+    background: var(--primary-gradient);
+}
+
+.salon-avatar.default-avatar i {
+    color: white;
+}
+
+.avatar-glow {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: var(--primary-gradient);
+    border-radius: 50%;
+    z-index: -1;
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+}
+
+.salon-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.salon-address {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    opacity: 0.9;
+}
+
+/* Modern Messages */
+.modern-messages-container {
+    margin-bottom: 2rem;
+}
+
+.modern-alert {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-alert::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-gradient);
+}
+
+.modern-alert.modern-alert-success::before {
+    background: var(--success-gradient);
+}
+
+.modern-alert.modern-alert-error::before {
+    background: var(--danger-gradient);
+}
+
+.modern-alert.modern-alert-warning::before {
+    background: var(--warning-gradient);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    color: var(--text-light);
+}
+
+.alert-icon {
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.modern-close-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.modern-close-btn:hover {
+    opacity: 1;
+}
+
+/* Salon Status */
+.salon-status-card {
+    margin-bottom: 2rem;
+}
+
+.salon-status-card .glass-card {
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.status-icon-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.status-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.status-icon.danger {
+    background: var(--danger-gradient);
+    color: white;
+}
+
+.icon-pulse {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border: 2px solid rgba(220, 53, 69, 0.5);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.status-title {
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.status-details {
+    color: var(--text-light);
+}
+
+.info-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    font-size: 1.1rem;
+}
+
+.status-note {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--warning-color);
+}
+
+/* Modern Dashboard Grid */
+.modern-dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.new-client-section,
+.salon-info-section {
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .modern-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Glass Cards Advanced */
+.glass-card-advanced {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px var(--glass-shadow);
+    overflow: hidden;
+    position: relative;
+}
+
+.glass-card-advanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--primary-gradient);
+}
+
+.card-header-modern {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.header-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+}
+
+.header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.header-subtitle {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.card-body-modern {
+    padding: 2rem;
+}
+
+/* Modern Forms */
+.modern-form {
+    width: 100%;
+}
+
+.form-section-header {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.section-divider {
+    height: 2px;
+    background: var(--primary-gradient);
+    border-radius: 1px;
+    width: 60px;
+}
+
+.form-group-modern {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-group-modern.half {
+    flex: 1;
+}
+
+.form-row-modern {
+    display: flex;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .form-row-modern {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+.floating-input-group {
+    position: relative;
+}
+
+.floating-input,
+.floating-select,
+.floating-textarea {
+    width: 100%;
+    padding: 1rem 1rem 1rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text-light);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.floating-input:focus,
+.floating-select:focus,
+.floating-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.floating-label {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0 0.5rem;
+    border-radius: 4px;
+}
+
+.floating-input:focus + .floating-label,
+.floating-input:not(:placeholder-shown) + .floating-label,
+.floating-select:focus + .floating-label,
+.floating-select:not([value=""]) + .floating-label,
+.floating-textarea:focus + .floating-label,
+.floating-textarea:not(:placeholder-shown) + .floating-label {
+    top: -0.5rem;
+    left: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.input-border {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: var(--primary-gradient);
+    transition: width 0.3s ease;
+}
+
+.floating-input:focus ~ .input-border,
+.floating-select:focus ~ .input-border,
+.floating-textarea:focus ~ .input-border {
+    width: 100%;
+}
+
+.form-help {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    padding-left: 1rem;
+}
+
+.loading-indicator {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+}
+
+/* Modern Appointments List */
+.appointments-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.appointment-card-modern {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.appointment-card-modern:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.appointment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.service-info {
+    flex: 1;
+}
+
+.service-name {
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.appointment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.detail-item i {
+    margin-right: 0.5rem;
+    width: 16px;
+    color: var(--primary-color);
+}
+
+.appointment-status {
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-badge.success {
+    background: var(--success-gradient);
+    color: white;
+}
+
+.status-badge.warning {
+    background: var(--warning-gradient);
+    color: white;
+}
+
+.status-badge.info {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.status-badge.primary {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.status-badge.secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+}
+
+.badge-icon {
+    font-size: 0.875rem;
+}
+
+/* Reschedule Info */
+.reschedule-info-modern {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reschedule-content {
+    background: rgba(23, 162, 184, 0.1);
+    border: 1px solid rgba(23, 162, 184, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.reschedule-header {
+    display: flex;
+    align-items: center;
+    color: var(--info-color);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.reschedule-details {
+    margin-bottom: 1.5rem;
+}
+
+.new-date {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+.reschedule-reason {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.reschedule-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Modern Buttons */
+.btn-modern {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-modern.success {
+    background: var(--success-gradient);
+    color: white;
+}
+
+.btn-modern.danger {
+    background: var(--danger-gradient);
+    color: white;
+}
+
+.btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Submit */
+.form-submit-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    margin-bottom: 1.5rem;
+    opacity: 0.6;
+}
+
+.empty-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.empty-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Salon Information */
+.salon-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .salon-info-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+.info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-title {
+    color: var(--text-light);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.info-text {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.salon-description {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.description-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.description-header h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.description-text {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+    0% { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0.7; transform: scale(1); }
+}
+
+/* Button overrides for client booking page */
+.btn-hero-primary,
+.btn.btn-hero-primary,
+button.btn-hero-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600;
+    text-shadow: none !important;
+}
+
+.btn-hero-primary:hover,
+.btn.btn-hero-primary:hover,
+button.btn-hero-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+    color: #ffffff !important;
+}
+
+.btn-hero-primary:focus,
+.btn-hero-primary:active,
+.btn.btn-hero-primary:focus,
+.btn.btn-hero-primary:active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Dark mode specific overrides */
+[data-theme="dark"] .btn-hero-primary,
+[data-theme="dark"] .btn.btn-hero-primary,
+[data-theme="dark"] button.btn-hero-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+[data-theme="dark"] .btn-hero-primary:hover,
+[data-theme="dark"] .btn.btn-hero-primary:hover,
+[data-theme="dark"] button.btn-hero-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+    color: #ffffff !important;
+}
+
+/* CORREÇÕES ESPECÍFICAS PARA MODO CLARO */
+[data-theme="light"] .hero-section-minimal {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+[data-theme="light"] .salon-title.gradient-text {
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="light"] .header-title.gradient-text {
+    background: var(--primary-gradient) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="light"] .section-title.gradient-text {
+    background: var(--primary-gradient) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="light"] .empty-icon {
+    color: #6c757d !important;
+}
+
+/* Botões no modo claro */
+[data-theme="light"] .btn-modern.success {
+    background: var(--success-gradient) !important;
+    color: white !important;
+}
+
+[data-theme="light"] .btn-modern.danger {
+    background: var(--danger-gradient) !important;
+    color: white !important;
+}
+
+/* Status badges no modo claro */
+[data-theme="light"] .status-badge {
+    color: white !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modern-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-header-modern,
+    .card-body-modern {
+        padding: 1.5rem;
+    }
+
+    .appointment-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .appointment-status {
+        align-self: flex-end;
+    }
+
+    .reschedule-actions {
+        flex-direction: column;
+    }
+
+    .salon-title {
+        font-size: 2rem;
+    }
+
+    .salon-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Modal PWA Styles */
+.pwa-install-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.pwa-install-modal.active {
+    display: flex;
+}
+
+.pwa-modal-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    animation: slideUp 0.4s ease-out;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.pwa-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.pwa-modal-content h3 {
+    color: #fff;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.pwa-modal-content p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.pwa-button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.pwa-btn {
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pwa-btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.pwa-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+}
+
+.pwa-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.pwa-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<!-- Modal PWA Install -->
+<div id="pwaInstallModal" class="pwa-install-modal">
+    <div class="pwa-modal-content">
+        <div class="pwa-icon">
+            <i class="fas fa-mobile-alt"></i>
+        </div>
+        <h3>📱 Instale o App!</h3>
+        <p>Seu agendamento foi criado com sucesso! Instale nosso app para acessar seus agendamentos rapidamente sempre que precisar.</p>
+        <div class="pwa-button-group">
+            <button id="pwaInstallBtn" class="pwa-btn pwa-btn-primary">
+                <i class="fas fa-download me-2"></i>Instalar App
+            </button>
+            <button id="pwaCloseBtn" class="pwa-btn pwa-btn-secondary">
+                Agora não
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// PWA Install Prompt Handler
+(function() {
+    const modal = document.getElementById('pwaInstallModal');
+    const installBtn = document.getElementById('pwaInstallBtn');
+    const closeBtn = document.getElementById('pwaCloseBtn');
+    const bookingToken = '{{ booking_token|default:"" }}';
+    
+    // Sempre salvar o token do cliente quando ele acessar a página (se for cliente existente)
+    {% if is_existing_client and booking_token %}
+    if (bookingToken) {
+        localStorage.setItem('client_booking_token', bookingToken);
+        console.log('Token do cliente atualizado no localStorage:', bookingToken);
+    }
+    {% endif %}
+    
+    let deferredPrompt = null;
+    
+    // Capturar evento de instalação do PWA
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('PWA install prompt available');
+    });
+    
+    // Mostrar modal se for primeiro agendamento
+    {% if show_pwa_prompt %}
+    if (modal && bookingToken) {
+        // Salvar token do cliente no localStorage
+        localStorage.setItem('client_booking_token', bookingToken);
+        console.log('Token do cliente salvo:', bookingToken);
+        
+        // Mostrar modal após um pequeno delay
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 1000);
+    }
+    {% endif %}
+    
+    // Botão de instalação
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('PWA install outcome:', outcome);
+                deferredPrompt = null;
+            } else {
+                // Se não tiver o prompt nativo, mostrar instruções
+                alert('Para instalar o app:\n\niOS: Toque no ícone de compartilhar e selecione "Adicionar à Tela de Início"\n\nAndroid: Toque no menu (⋮) e selecione "Adicionar à tela inicial" ou "Instalar app"');
+            }
+            modal.classList.remove('active');
+        });
+    }
+    
+    // Botão de fechar
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+    }
+    
+    // Fechar modal ao clicar fora
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    }
+})();
+</script>
+
+{% endblock %}

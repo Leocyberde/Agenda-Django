@@ -1,0 +1,118 @@
+
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Editar Preço - {{ plan.get_plan_type_display }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>
+                    <i class="fas fa-edit me-2"></i>Editar Preço do Plano
+                </h2>
+                <p class="text-muted mb-0">{{ plan.get_plan_type_display }}</p>
+            </div>
+            <a href="{% url 'admin_panel:manage_plan_pricing' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card admin-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-{% if plan.plan_type == 'trial_10' %}clock{% else %}crown{% endif %} me-2"></i>
+                    Configurações do {{ plan.get_plan_type_display }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">
+                                <strong>Preço (R$)</strong>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="price" 
+                                       name="price" 
+                                       value="{{ plan.price|floatformat:2 }}" 
+                                       step="0.01" 
+                                       min="0"
+                                       required>
+                            </div>
+                            <small class="text-muted">Digite o valor em reais (ex: 49.90)</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <strong>Status</strong>
+                            </label>
+                            <div class="form-check form-switch">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       id="is_active" 
+                                       name="is_active"
+                                       {% if plan.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    Plano ativo
+                                </label>
+                            </div>
+                            <small class="text-muted">Desmarque para desativar temporariamente</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label">
+                            <strong>Descrição</strong>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  placeholder="Descrição do plano...">{{ plan.description }}</textarea>
+                        <small class="text-muted">Esta descrição será exibida na página de preços</small>
+                    </div>
+                    
+                    <!-- Preview -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-eye me-2"></i>Preview
+                        </h6>
+                        <div class="text-center">
+                            <h4 class="text-primary mb-2">
+                                R$ <span id="price-preview">{{ plan.price|floatformat:2 }}</span>
+                            </h4>
+                            <p class="mb-0">{{ plan.get_plan_type_display }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                        <a href="{% url 'admin_panel:manage_plan_pricing' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('price').addEventListener('input', function() {
+    const price = parseFloat(this.value) || 0;
+    document.getElementById('price-preview').textContent = price.toFixed(2);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,655 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Dashboard - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </h2>
+                <p class="text-muted mb-0">Bem-vindo ao painel do {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:edit_salon' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit me-2"></i>Editar Salão
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status do Salão -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-1">
+                            <i class="fas fa-store me-2"></i>Status do Salão
+                        </h5>
+                        {% if salon.is_temporarily_closed %}
+                            <span class="badge bg-danger fs-6 me-2">
+                                <i class="fas fa-times-circle me-1"></i>Fechado
+                            </span>
+                            {% if salon.closed_until %}
+                                <small class="text-muted">
+                                    até {{ salon.closed_until|date:"d/m/Y H:i" }}
+                                </small>
+                            {% else %}
+                                <small class="text-muted">Fechado indefinidamente</small>
+                            {% endif %}
+                            {% if salon.closure_note %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>{{ salon.closure_note }}
+                                    </small>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-check-circle me-1"></i>Aberto
+                            </span>
+                            <small class="text-muted">Aceitando agendamentos</small>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="{% url 'salons:manage_salon_status' %}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-cog me-2"></i>Configurar
+                        </a>
+                        <button type="button" class="btn {% if salon.is_temporarily_closed %}btn-success{% else %}btn-warning{% endif %}" 
+                                onclick="toggleSalonStatus()">
+                            {% if salon.is_temporarily_closed %}
+                                <i class="fas fa-unlock me-2"></i>Reabrir
+                            {% else %}
+                                <i class="fas fa-lock me-2"></i>Fechar
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da Assinatura -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% if subscription.is_active %}
+            {% if subscription.days_remaining <= 3 %}
+                <div class="alert subscription-warning" role="alert">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="alert-heading mb-1">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Assinatura expirando em breve!
+                            </h5>
+                            <p class="mb-0">
+                                Sua assinatura {{ subscription.get_plan_type_display }} expira em {{ subscription.days_remaining }} dia{{ subscription.days_remaining|pluralize }}.
+                            </p>
+                        </div>
+                        <a href="{% url 'subscriptions:detail' %}" class="btn btn-warning">
+                            <i class="fas fa-crown me-2"></i>Renovar
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert subscription-info" role="alert">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="alert-heading mb-1">
+                                <i class="fas fa-check-circle me-2"></i>Assinatura Ativa
+                            </h6>
+                            <p class="mb-0">
+                                Plano {{ subscription.get_plan_type_display }} - {{ subscription.days_remaining }} dia{{ subscription.days_remaining|pluralize }} restante{{ subscription.days_remaining|pluralize }}.
+                            </p>
+                        </div>
+                        <a href="{% url 'subscriptions:detail' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-crown me-2"></i>Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert subscription-danger" role="alert">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="alert-heading mb-1">
+                            <i class="fas fa-times-circle me-2"></i>Assinatura Expirada
+                        </h5>
+                        <p class="mb-0">Renove sua assinatura para continuar recebendo agendamentos.</p>
+                    </div>
+                    <a href="{% url 'subscriptions:detail' %}" class="btn btn-danger">
+                        <i class="fas fa-crown me-2"></i>Renovar Agora
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-2">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <h3 class="text-primary mb-1">{{ stats.appointments_today }}</h3>
+                <p class="text-muted mb-0">Agendamentos Hoje</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-2">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <h3 class="text-primary mb-1">{{ stats.appointments_week }}</h3>
+                <p class="text-muted mb-0">Esta Semana</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-warning mb-2">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="text-warning mb-1">{{ stats.pending_appointments }}</h3>
+                <p class="text-muted mb-0">Pendentes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-success mb-2">
+                    <i class="fas fa-list"></i>
+                </div>
+                <h3 class="text-success mb-1">{{ stats.total_services }}</h3>
+                <p class="text-muted mb-0">Serviços Ativos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stats-card">
+            <div class="card-body text-center">
+                <div class="display-6 text-info mb-2">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="text-info mb-1">{{ stats.total_employees }}</h3>
+                <p class="text-muted mb-0">Funcionários</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo Financeiro -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Resumo Financeiro - Mês Atual
+                </h5>
+                <a href="{% url 'salons:financial_dashboard' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-plus me-2"></i>Gerenciar Finanças
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-success-light rounded-circle p-3">
+                                    <i class="fas fa-arrow-up text-success"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Receitas</h6>
+                                <h4 class="text-success mb-0">R$ {{ financial_summary.current_income|floatformat:2 }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-danger-light rounded-circle p-3">
+                                    <i class="fas fa-arrow-down text-danger"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Despesas</h6>
+                                <h4 class="text-danger mb-0">R$ {{ financial_summary.current_expenses|floatformat:2 }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-info-light rounded-circle p-3">
+                                    <i class="fas fa-users text-info"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Funcionários</h6>
+                                <h4 class="text-info mb-0">R$ {{ financial_summary.employee_costs|floatformat:2 }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-{% if financial_summary.net_result >= 0 %}primary{% else %}warning{% endif %}-light rounded-circle p-3">
+                                    <i class="fas fa-balance-scale text-{% if financial_summary.net_result >= 0 %}primary{% else %}warning{% endif %}"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Líquido</h6>
+                                <h4 class="text-{% if financial_summary.net_result >= 0 %}primary{% else %}warning{% endif %} mb-0">
+                                    R$ {{ financial_summary.net_result|floatformat:2 }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="row text-sm">
+                            <div class="col-md-3">
+                                <small class="text-muted">
+                                    <strong>Receitas:</strong> Resumo de todo serviço feito no mês
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">
+                                    <strong>Despesas:</strong> Contas a pagar mensalmente do salão
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">
+                                    <strong>Funcionários:</strong> Pagamento dos funcionários no mês
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">
+                                    <strong>Resultado:</strong> Receita - Despesas - Funcionários = Líquido
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Seção de Produtos com Cashback -->
+<div class="row mb-4">
+    <div class="col-xl-6 col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-gradient-primary text-white d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-shopping-bag me-2"></i>
+                    <h6 class="mb-0">Loja de Produtos</h6>
+                </div>
+                <span class="badge bg-warning text-dark">
+                    <i class="fas fa-coins me-1"></i>Cashback
+                </span>
+            </div>
+            <div class="card-body">
+                {% if featured_products %}
+                    {% for product in featured_products %}
+                    <div class="d-flex align-items-center mb-3 p-2 rounded hover-bg-light">
+                        {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="rounded me-3" 
+                             style="width: 60px; height: 60px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-image text-muted"></i>
+                        </div>
+                        {% endif %}
+
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ product.name }}</h6>
+                            <p class="text-muted mb-1 small">{{ product.brand }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-success fw-bold">{{ product.price_formatted }}</span>
+                                {% if product.has_cashback %}
+                                <div class="text-end">
+                                    <small class="text-warning fw-bold d-block">
+                                        <i class="fas fa-coins me-1"></i>+{{ product.cashback_amount_formatted }}
+                                    </small>
+                                    <small class="text-muted">({{ product.cashback_percentage }}% cashback)</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Informativo sobre Cashback -->
+                    <div class="alert alert-info mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div class="flex-grow-1">
+                                <strong>Como funciona o cashback:</strong>
+                                <small class="d-block text-muted">
+                                    Compre produtos através da nossa loja e ganhe dinheiro de volta! 
+                                    O cashback é creditado após a confirmação da compra.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <a href="{% url 'salons:store_products' %}" class="btn btn-primary w-100">
+                                <i class="fas fa-store me-2"></i>Ver Loja Completa
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'admin_panel:cashback_dashboard' %}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-coins me-2"></i>Meu Cashback
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">Loja de Produtos</h6>
+                        <p class="text-muted mb-3">
+                            Produtos selecionados para salões de beleza com sistema de cashback exclusivo!
+                        </p>
+
+                        <!-- Benefícios do Cashback -->
+                        <div class="row text-center mb-4">
+                            <div class="col-4">
+                                <div class="text-success">
+                                    <i class="fas fa-coins fa-2x mb-2"></i>
+                                    <small class="d-block fw-bold">Ganhe Cashback</small>
+                                    <small class="text-muted">Em cada compra</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-primary">
+                                    <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                                    <small class="d-block fw-bold">Compra Segura</small>
+                                    <small class="text-muted">Links oficiais</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-info">
+                                    <i class="fas fa-star fa-2x mb-2"></i>
+                                    <small class="d-block fw-bold">Produtos Selecionados</small>
+                                    <small class="text-muted">Para salões</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'salons:store_products' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-store me-2"></i>Explorar Loja
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Próximos Agendamentos -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Próximos Agendamentos
+                </h5>
+                <a href="{% url 'salons:appointments_list' %}" class="btn btn-sm btn-outline-primary">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if upcoming_appointments %}
+                    <div class="list-group list-group-flush">
+                        {% for appointment in upcoming_appointments %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ appointment.client.first_name }} {{ appointment.client.last_name }}</h6>
+                                    <p class="mb-1">
+                                        <strong>{{ appointment.service.name }}</strong> - 
+                                        {{ appointment.appointment_date|date:"d/m/Y" }} às {{ appointment.appointment_time|time:"H:i" }}
+                                    </p>
+                                    <small class="text-muted">{{ appointment.service.duration }} min - R$ {{ appointment.service.price }}</small>
+                                </div>
+                                <span class="badge bg-{% if appointment.status == 'confirmed' %}success{% elif appointment.status == 'scheduled' %}warning{% else %}secondary{% endif %}">
+                                    {{ appointment.get_status_display }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times display-4 text-muted mb-3"></i>
+                        <p class="text-muted">Nenhum agendamento próximo</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'salons:create_service' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Novo Serviço
+                    </a>
+                    <a href="{% url 'salons:create_employee' %}" class="btn btn-success">
+                        <i class="fas fa-user-plus me-2"></i>Novo Funcionário
+                    </a>
+                    <a href="{% url 'salons:employees_list' %}" class="btn btn-success">
+                        <i class="fas fa-users me-2"></i>Gerenciar Funcionários
+                    </a>
+                    <hr class="my-2">
+                    <a href="{% url 'salons:services_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>Gerenciar Serviços
+                    </a>
+                    <a href="{% url 'salons:appointments_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Ver Agendamentos
+                    </a>
+                    <a href="{% url 'salons:manage_client_links' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-link me-2"></i>Links de Agendamento
+                    </a>
+                    <hr class="my-2">
+                    <a href="{% url 'salons:edit_salon' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-store me-2"></i>Editar Salão
+                    </a>
+                    <a href="{% url 'salons:store_products' %}" class="btn btn-primary">
+                        <i class="fas fa-shopping-bag me-2"></i>Ir para Loja
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Salão -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Informações do Salão
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if salon.photo %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="mb-2"><strong>Nome:</strong> {{ salon.name }}</p>
+                            <p class="mb-2"><strong>Cidade:</strong> {{ salon.city }}, {{ salon.state }}</p>
+                            <p class="mb-2"><strong>Telefone:</strong> {{ salon.phone }}</p>
+                            <p class="mb-0"><strong>Email:</strong> {{ salon.email }}</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <img src="{{ salon.photo.url }}" alt="{{ salon.name }}" class="img-fluid rounded" style="max-height: 120px;">
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="mb-2"><strong>Nome:</strong> {{ salon.name }}</p>
+                    <p class="mb-2"><strong>Cidade:</strong> {{ salon.city }}, {{ salon.state }}</p>
+                    <p class="mb-2"><strong>Telefone:</strong> {{ salon.phone }}</p>
+                    <p class="mb-0"><strong>Email:</strong> {{ salon.email }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Multas de Cancelamento -->
+{% if pending_fees %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Multas de Cancelamento Pendentes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Serviço</th>
+                                <th>Data do Agendamento</th>
+                                <th>Valor da Multa</th>
+                                <th>Detalhes do Cancelamento</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fee in pending_fees %}
+                            <tr>
+                                <td>
+                                    <strong>{{ fee.appointment.client.get_full_name }}</strong><br>
+                                    <small class="text-muted">{{ fee.appointment.client.email }}</small>
+                                </td>
+                                <td>{{ fee.appointment.service.name }}</td>
+                                <td>
+                                    {{ fee.appointment.appointment_date|date:"d/m/Y" }} às 
+                                    {{ fee.appointment.appointment_time|time:"H:i" }}
+                                </td>
+                                <td>
+                                    <strong class="text-danger">R$ {{ fee.amount|floatformat:2 }}</strong><br>
+                                    <small class="text-muted">({{ fee.fee_percentage|floatformat:0 }}% de R$ {{ fee.service_price|floatformat:2 }})</small>
+                                </td>
+                                <td>
+                                    <div class="cancellation-details">
+                                        <div><strong>Cancelado em:</strong></div>
+                                        <small class="text-muted">{{ fee.cancelled_at|date:"d/m/Y" }} às {{ fee.cancelled_at|time:"H:i" }}</small>
+                                        
+                                        {% if fee.cancelled_by_employee %}
+                                        <div class="mt-1"><strong>Funcionário:</strong></div>
+                                        <small class="text-muted">{{ fee.cancelled_by_employee.user.get_full_name }}</small>
+                                        {% endif %}
+                                        
+                                        <div class="mt-1"><strong>Antecedência:</strong></div>
+                                        <small class="text-muted">{{ fee.hours_before_appointment|floatformat:1 }}h antes</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">Pendente</span>
+                                    <form method="post" action="{% url 'salons:mark_cancellation_fee_paid' fee.id %}" class="d-inline mt-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success" 
+                                                onclick="return confirm('Confirmar que a multa de R$ {{ fee.amount|floatformat:2 }} foi paga?')">
+                                            <i class="fas fa-check me-1"></i>Marcar como Paga
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Total de multas pendentes:</strong> R$ {{ pending_fees|length }} multa{{ pending_fees|length|pluralize }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSalonStatus() {
+    // Desabilitar botão durante requisição
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+
+    fetch('{% url "salons:toggle_salon_status" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Recarregar página para mostrar mudanças
+            location.reload();
+        } else {
+            alert('Erro ao alterar status do salão. Tente novamente.');
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro de conexão. Tente novamente.');
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+function toggleDescriptionDashboard(button) {
+    const descriptionContainer = button.closest('.product-description-container');
+    const preview = descriptionContainer.querySelector('.description-preview-dashboard');
+    const fullDescription = descriptionContainer.querySelector('.description-full-dashboard');
+    const seeMoreButton = button.querySelector('small');
+
+    if (fullDescription.style.display === 'none' || fullDescription.style.display === '') {
+        preview.style.display = 'none';
+        fullDescription.style.display = 'block';
+        seeMoreButton.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Ver menos';
+    } else {
+        preview.style.display = 'block';
+        fullDescription.style.display = 'none';
+        seeMoreButton.innerHTML = '<i class="fas fa-chevron-down me-1"></i>Ver mais';
+    }
+}
+</script>
+{% endblock %}

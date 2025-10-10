@@ -1,0 +1,230 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Cadastro - Sistema de Agendamento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-store me-2"></i>Cadastrar Salão
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Exibir erros do formulário -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                
+                <!-- Debug info para plano selecionado -->
+                {% if selected_plan %}
+                    <div class="alert alert-info" role="alert">
+                        <small>Plano selecionado: {{ selected_plan }}</small>
+                    </div>
+                {% endif %}
+                
+                <form method="post" class="modern-form" data-validate="true" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" 
+                                       class="form-control{% if form.first_name.errors %} is-invalid{% endif %}" 
+                                       id="{{ form.first_name.id_for_label }}" 
+                                       name="{{ form.first_name.name }}"
+                                       value="{{ form.first_name.value|default_if_none:'' }}"
+                                       placeholder="Nome" 
+                                       required
+                                       autocomplete="given-name"
+                                       aria-describedby="{% if form.first_name.errors %}{{ form.first_name.id_for_label }}-error{% endif %}">
+                                <label for="{{ form.first_name.id_for_label }}">
+                                    <i class="fas fa-user me-2"></i>{{ form.first_name.label }}
+                                </label>
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback" id="{{ form.first_name.id_for_label }}-error">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" 
+                                       class="form-control{% if form.last_name.errors %} is-invalid{% endif %}" 
+                                       id="{{ form.last_name.id_for_label }}" 
+                                       name="{{ form.last_name.name }}"
+                                       value="{{ form.last_name.value|default_if_none:'' }}"
+                                       placeholder="Sobrenome" 
+                                       required
+                                       autocomplete="family-name"
+                                       aria-describedby="{% if form.last_name.errors %}{{ form.last_name.id_for_label }}-error{% endif %}">
+                                <label for="{{ form.last_name.id_for_label }}">
+                                    <i class="fas fa-user me-2"></i>{{ form.last_name.label }}
+                                </label>
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback" id="{{ form.last_name.id_for_label }}-error">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="email" 
+                               class="form-control{% if form.email.errors %} is-invalid{% endif %}" 
+                               id="{{ form.email.id_for_label }}" 
+                               name="{{ form.email.name }}"
+                               value="{{ form.email.value|default_if_none:'' }}"
+                               placeholder="seu@email.com" 
+                               required
+                               autocomplete="email"
+                               aria-describedby="{% if form.email.errors %}{{ form.email.id_for_label }}-error{% endif %}">
+                        <label for="{{ form.email.id_for_label }}">
+                            <i class="fas fa-envelope me-2"></i>{{ form.email.label }}
+                        </label>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback" id="{{ form.email.id_for_label }}-error">
+                                {{ form.email.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="tel" 
+                               class="form-control{% if form.phone.errors %} is-invalid{% endif %}" 
+                               id="{{ form.phone.id_for_label }}" 
+                               name="{{ form.phone.name }}"
+                               value="{{ form.phone.value|default_if_none:'' }}"
+                               placeholder="(11) 99999-9999" 
+                               autocomplete="tel"
+                               aria-describedby="{% if form.phone.errors %}{{ form.phone.id_for_label }}-error{% endif %}">
+                        <label for="{{ form.phone.id_for_label }}">
+                            <i class="fas fa-phone me-2"></i>{{ form.phone.label }}
+                        </label>
+                        {% if form.phone.errors %}
+                            <div class="invalid-feedback" id="{{ form.phone.id_for_label }}-error">
+                                {{ form.phone.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="text" 
+                               class="form-control{% if form.salon_name.errors %} is-invalid{% endif %}" 
+                               id="{{ form.salon_name.id_for_label }}" 
+                               name="{{ form.salon_name.name }}"
+                               value="{{ form.salon_name.value|default_if_none:'' }}"
+                               placeholder="Nome do Salão" 
+                               required
+                               aria-describedby="{% if form.salon_name.errors %}{{ form.salon_name.id_for_label }}-error{% endif %}">
+                        <label for="{{ form.salon_name.id_for_label }}">
+                            <i class="fas fa-store me-2"></i>{{ form.salon_name.label }}
+                        </label>
+                        {% if form.salon_name.errors %}
+                            <div class="invalid-feedback" id="{{ form.salon_name.id_for_label }}-error">
+                                {{ form.salon_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-floating">
+                        <textarea class="form-control{% if form.salon_address.errors %} is-invalid{% endif %}" 
+                                  id="{{ form.salon_address.id_for_label }}" 
+                                  name="{{ form.salon_address.name }}"
+                                  placeholder="Endereço do Salão" 
+                                  style="height: 80px"
+                                  required
+                                  aria-describedby="{% if form.salon_address.errors %}{{ form.salon_address.id_for_label }}-error{% endif %}">{{ form.salon_address.value|default_if_none:'' }}</textarea>
+                        <label for="{{ form.salon_address.id_for_label }}">
+                            <i class="fas fa-map-marker-alt me-2"></i>{{ form.salon_address.label }}
+                        </label>
+                        {% if form.salon_address.errors %}
+                            <div class="invalid-feedback" id="{{ form.salon_address.id_for_label }}-error">
+                                {{ form.salon_address.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="password" 
+                                       class="form-control{% if form.password1.errors %} is-invalid{% endif %}" 
+                                       id="{{ form.password1.id_for_label }}" 
+                                       name="{{ form.password1.name }}"
+                                       placeholder="Senha" 
+                                       required
+                                       autocomplete="new-password"
+                                       aria-describedby="{% if form.password1.errors %}{{ form.password1.id_for_label }}-error{% endif %}">
+                                <label for="{{ form.password1.id_for_label }}">
+                                    <i class="fas fa-lock me-2"></i>{{ form.password1.label }}
+                                </label>
+                                <button class="password-toggle" 
+                                        type="button" 
+                                        onclick="togglePassword('{{ form.password1.id_for_label }}', 'togglePassword1Icon')"
+                                        aria-label="Mostrar senha">
+                                    <i class="fas fa-eye" id="togglePassword1Icon"></i>
+                                </button>
+                                {% if form.password1.errors %}
+                                    <div class="invalid-feedback" id="{{ form.password1.id_for_label }}-error">
+                                        {{ form.password1.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="password" 
+                                       class="form-control{% if form.password2.errors %} is-invalid{% endif %}" 
+                                       id="{{ form.password2.id_for_label }}" 
+                                       name="{{ form.password2.name }}"
+                                       placeholder="Confirmar Senha" 
+                                       required
+                                       autocomplete="new-password"
+                                       aria-describedby="{% if form.password2.errors %}{{ form.password2.id_for_label }}-error{% endif %}">
+                                <label for="{{ form.password2.id_for_label }}">
+                                    <i class="fas fa-lock me-2"></i>{{ form.password2.label }}
+                                </label>
+                                <button class="password-toggle" 
+                                        type="button" 
+                                        onclick="togglePassword('{{ form.password2.id_for_label }}', 'togglePassword2Icon')"
+                                        aria-label="Mostrar confirmação de senha">
+                                    <i class="fas fa-eye" id="togglePassword2Icon"></i>
+                                </button>
+                                {% if form.password2.errors %}
+                                    <div class="invalid-feedback" id="{{ form.password2.id_for_label }}-error">
+                                        {{ form.password2.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-submit">
+                            <i class="fas fa-store me-2"></i>Cadastrar Salão
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <p class="mb-0">
+                        Já tem conta? 
+                        <a href="{% url 'accounts:login' %}" class="text-primary">Faça login</a>
+                    </p>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Cadastro exclusivo para proprietários de salão
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

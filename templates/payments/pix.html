@@ -1,0 +1,223 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3 class="mb-0"><i class="fas fa-qrcode me-2"></i>Pagamento PIX</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Como pagar:</strong> Escaneie o QR Code com o app do seu banco ou copie o código PIX
+                    </div>
+
+                    <!-- Debug Info -->
+                    <div class="alert alert-info mb-3">
+                        <strong>Debug Info:</strong><br>
+                        QR Code (texto): {{ qr_code|length|default:"0" }} caracteres<br>
+                        QR Code (base64): {{ qr_code_base64|length|default:"0" }} caracteres<br>
+                        Payment ID: {{ payment_id }}
+                    </div>
+
+                    {% if qr_code_base64 %}
+                    <div class="text-center mb-4 p-4 bg-light rounded">
+                        <h5 class="mb-3">Escaneie o QR Code</h5>
+                        <img src="data:image/png;base64,{{ qr_code_base64 }}" 
+                             alt="QR Code PIX" 
+                             class="img-fluid border rounded shadow"
+                             style="max-width: 300px;"
+                             onload="console.log('✅ QR Code carregado com sucesso!');"
+                             onerror="console.error('❌ Erro ao carregar imagem QR Code'); this.style.display='none'; alert('Erro ao carregar QR Code!');">
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>QR Code Base64 não disponível.</strong> 
+                        {% if qr_code %}
+                        Use o código PIX abaixo para copiar e colar.
+                        {% else %}
+                        Nenhum código PIX foi gerado. Tente novamente ou entre em contato com o suporte.
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if qr_code %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-barcode me-2"></i>Código PIX (Copia e Cola):
+                        </label>
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="pix-code" 
+                                   value="{{ qr_code }}" 
+                                   readonly
+                                   style="font-family: monospace; font-size: 0.9rem;">
+                            <button class="btn btn-primary" 
+                                    type="button" 
+                                    onclick="copyPixCode(this)">
+                                <i class="fas fa-copy me-1"></i>Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">Clique em "Copiar" e cole no seu aplicativo bancário</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Erro ao gerar código PIX. Por favor, tente novamente ou entre em contato com o suporte.
+                    </div>
+                    {% endif %}
+
+                    <div class="card bg-light border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Detalhes do Pagamento
+                            </h5>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <strong><i class="fas fa-crown me-2 text-warning"></i>Plano:</strong> 
+                                    <span class="badge bg-primary">{{ plan.get_plan_type_display }}</span>
+                                </li>
+                                <li class="mb-2">
+                                    <strong><i class="fas fa-money-bill-wave me-2 text-success"></i>Valor:</strong> 
+                                    <span class="fs-5 text-success">R$ {{ plan.price }}</span>
+                                </li>
+                                <li>
+                                    <strong><i class="fas fa-hashtag me-2 text-info"></i>ID do Pagamento:</strong> 
+                                    <code>{{ payment_id }}</code>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning border-0 shadow-sm mt-3">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Atenção:</strong> O QR Code expira em 30 minutos. Após o pagamento, sua assinatura será ativada automaticamente.
+                    </div>
+
+                    <div id="payment-status" class="alert alert-info border-0 shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Verificando...</span>
+                            </div>
+                            <span>Aguardando confirmação do pagamento...</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'subscriptions:detail' %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-1"></i>Voltar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyPixCode(button) {
+    const pixCode = document.getElementById('pix-code');
+
+    // Tentar usar a API moderna de clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pixCode.value).then(() => {
+            showCopySuccess(button);
+        }).catch(err => {
+            console.error('Erro ao copiar com clipboard API:', err);
+            // Fallback para método antigo
+            fallbackCopyTextToClipboard(pixCode, button);
+        });
+    } else {
+        // Fallback para navegadores mais antigos
+        fallbackCopyTextToClipboard(pixCode, button);
+    }
+}
+
+function fallbackCopyTextToClipboard(input, button) {
+    try {
+        input.select();
+        input.setSelectionRange(0, 99999); // Para mobile
+        document.execCommand('copy');
+        showCopySuccess(button);
+    } catch (err) {
+        console.error('Erro ao copiar com execCommand:', err);
+        alert('Erro ao copiar. Por favor, copie manualmente o código PIX acima.');
+    }
+}
+
+function showCopySuccess(button) {
+    const originalHTML = button.innerHTML;
+
+    button.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+    button.classList.remove('btn-primary');
+    button.classList.add('btn-success');
+
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-primary');
+    }, 2000);
+}
+
+// Verificar status do pagamento a cada 5 segundos
+let checkCount = 0;
+const maxChecks = 120; // 10 minutos (120 * 5 segundos)
+
+const intervalId = setInterval(async () => {
+    checkCount++;
+
+    if (checkCount > maxChecks) {
+        clearInterval(intervalId);
+        document.getElementById('payment-status').innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Tempo de verificação expirado. Recarregue a página para verificar o status.
+        `;
+        document.getElementById('payment-status').classList.remove('alert-info');
+        document.getElementById('payment-status').classList.add('alert-warning');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/payments/verificar-pagamento/{{ payment.id }}/`);
+        const data = await response.json();
+
+        if (data.status === 'approved') {
+            clearInterval(intervalId);
+            document.getElementById('payment-status').innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Pagamento aprovado!</strong> Redirecionando...
+            `;
+            document.getElementById('payment-status').classList.remove('alert-info');
+            document.getElementById('payment-status').classList.add('alert-success');
+
+            setTimeout(() => {
+                window.location.href = data.redirect;
+            }, 1500);
+        }
+    } catch (error) {
+        console.error('Erro ao verificar pagamento:', error);
+    }
+}, 5000);
+</script>
+
+<style>
+.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+#pix-code {
+    word-break: break-all;
+}
+</style>
+{% endblock %}

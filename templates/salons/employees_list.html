@@ -1,0 +1,104 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Funcionários - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-users me-2"></i>Funcionários
+                </h2>
+                <p class="text-muted mb-0">Gerencie os funcionários do {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:create_employee' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>Novo Funcionário
+                </a>
+                <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if employees %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Serviços</th>
+                                    <th>Status</th>
+                                    <th>Data de Contratação</th>
+                                    <th width="150">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for employee in employees %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ employee.user.get_full_name|default:employee.user.username }}</strong>
+                                    </td>
+                                    <td>{{ employee.user.email }}</td>
+                                    <td>
+                                        {% if employee.services.count > 0 %}
+                                            <small class="text-muted">
+                                                {% for service in employee.services.all|slice:":2" %}
+                                                    <span class="badge bg-secondary me-1">{{ service.name }}</span>
+                                                {% endfor %}
+                                                {% if employee.services.count > 2 %}
+                                                    <span class="text-muted">+{{ employee.services.count|add:"-2" }} mais</span>
+                                                {% endif %}
+                                            </small>
+                                        {% else %}
+                                            <small class="text-muted">Nenhum serviço atribuído</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if employee.is_active %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ employee.hire_date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'salons:edit_employee' employee.id %}" 
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'salons:delete_employee' employee.id %}" 
+                                               class="btn btn-outline-danger" title="Remover">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum funcionário cadastrado</h5>
+                        <p class="text-muted mb-4">Adicione funcionários para que possam gerenciar agendamentos</p>
+                        <a href="{% url 'salons:create_employee' %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Cadastrar Primeiro Funcionário
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

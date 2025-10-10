@@ -1,0 +1,151 @@
+
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}{{ owner.user.first_name }} {{ owner.user.last_name }} - Detalhes{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>
+                    <i class="fas fa-user me-2"></i>{{ owner.user.first_name }} {{ owner.user.last_name }}
+                </h2>
+                <p class="text-muted mb-0">Detalhes do comerciante</p>
+            </div>
+            <div>
+                <a href="{% url 'admin_panel:manage_owners' %}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                <a href="{% url 'admin_panel:manage_subscription' owner.id %}" class="btn btn-primary">
+                    <i class="fas fa-crown me-2"></i>Gerenciar Assinatura
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações do Usuário -->
+    <div class="col-lg-4 mb-4">
+        <div class="card admin-card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Informações Pessoais
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Nome:</strong> {{ owner.user.first_name }} {{ owner.user.last_name }}</p>
+                <p class="mb-2"><strong>Email:</strong> {{ owner.user.email }}</p>
+                <p class="mb-2"><strong>Telefone:</strong> {{ owner.phone|default:"Não informado" }}</p>
+                <p class="mb-2"><strong>Tipo:</strong> {{ owner.get_user_type_display }}</p>
+                <p class="mb-0"><strong>Cadastro:</strong> {{ owner.created_at|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+
+        <!-- Status da Assinatura -->
+        <div class="card admin-card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="fas fa-crown me-2"></i>Status da Assinatura
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                    <p class="mb-2"><strong>Plano:</strong> {{ subscription.get_plan_type_display }}</p>
+                    <p class="mb-2"><strong>Status:</strong> 
+                        {% if subscription.is_active %}
+                            <span class="badge bg-success">Ativa</span>
+                        {% else %}
+                            <span class="badge bg-danger">Expirada</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-2"><strong>Início:</strong> {{ subscription.start_date|date:"d/m/Y H:i" }}</p>
+                    <p class="mb-2"><strong>Término:</strong> {{ subscription.end_date|date:"d/m/Y H:i" }}</p>
+                    <p class="mb-0"><strong>Dias restantes:</strong> {{ subscription.days_remaining }}</p>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle text-warning display-6 mb-2"></i>
+                        <p class="text-muted mb-0">Sem assinatura</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Salão -->
+    <div class="col-lg-8 mb-4">
+        <div class="card admin-card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-store me-2"></i>Informações do Salão
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if salon %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>Nome:</strong> {{ salon.name }}</p>
+                            <p class="mb-2"><strong>Email:</strong> {{ salon.email }}</p>
+                            <p class="mb-2"><strong>Telefone:</strong> {{ salon.phone }}</p>
+                            <p class="mb-2"><strong>Endereço:</strong> {{ salon.address }}</p>
+                            <p class="mb-0"><strong>Cidade:</strong> {{ salon.city }}, {{ salon.state }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if salon.description %}
+                                <p class="mb-2"><strong>Descrição:</strong></p>
+                                <p class="text-muted">{{ salon.description }}</p>
+                            {% endif %}
+                            <p class="mb-2"><strong>CEP:</strong> {{ salon.zip_code }}</p>
+                            <p class="mb-0"><strong>Cadastrado em:</strong> {{ salon.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-store-slash display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">Salão não cadastrado</h5>
+                        <p class="text-muted">Este comerciante ainda não cadastrou seu salão</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row mt-3">
+            <div class="col-md-4 mb-3">
+                <div class="card admin-card stat-card-info">
+                    <div class="card-body text-center">
+                        <div class="display-6 mb-2">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <h4 class="mb-1">{{ total_services }}</h4>
+                        <p class="mb-0">Serviços Ativos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card admin-card stat-card-success">
+                    <div class="card-body text-center">
+                        <div class="display-6 mb-2">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h4 class="mb-1">{{ total_appointments }}</h4>
+                        <p class="mb-0">Total Agendamentos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card admin-card stat-card-warning">
+                    <div class="card-body text-center">
+                        <div class="display-6 mb-2">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h4 class="mb-1">{{ pending_appointments }}</h4>
+                        <p class="mb-0">Agendamentos Pendentes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: salon-booking
+    env: python
+    buildCommand: "pip install -r requirements.txt && python manage.py makemigrations && python manage.py migrate && python manage.py collectstatic --noinput && python manage.py initadmin"
+    startCommand: "gunicorn salon_booking.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 180"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: MP_PUBLIC_KEY
+        sync: false
+
+
+
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false

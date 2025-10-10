@@ -1,0 +1,137 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Painel Financeiro - {{ salon.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-primary mb-1">
+                    <i class="fas fa-chart-line me-2"></i>Painel Financeiro
+                </h2>
+                <p class="text-muted mb-0">Gerenciamento financeiro - {{ salon.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'salons:add_financial_record' %}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus me-2"></i>Adicionar Registro
+                </a>
+                <a href="{% url 'salons:owner_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo do Mês Atual -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-arrow-up text-success fa-2x mb-2"></i>
+                <h4 class="text-success">R$ {{ current_income|floatformat:2 }}</h4>
+                <p class="mb-0">Receitas ({{ current_month }}/{{ current_year }})</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-arrow-down text-danger fa-2x mb-2"></i>
+                <h4 class="text-danger">R$ {{ current_expenses|floatformat:2 }}</h4>
+                <p class="mb-0">Despesas ({{ current_month }}/{{ current_year }})</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-users text-info fa-2x mb-2"></i>
+                <h4 class="text-info">R$ {{ employee_costs|floatformat:2 }}</h4>
+                <p class="mb-0">Custos com Funcionários</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-balance-scale text-primary fa-2x mb-2"></i>
+                <h4 class="text-{% if net_result >= 0 %}success{% else %}warning{% endif %}">R$ {{ net_result|floatformat:2 }}</h4>
+                <p class="mb-0">Resultado Líquido</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-lightning-bolt me-2"></i>Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'salons:generate_employee_expenses' %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="month" value="{{ current_month }}">
+                    <input type="hidden" name="year" value="{{ current_year }}">
+                    <button type="submit" class="btn btn-warning me-2">
+                        <i class="fas fa-users me-2"></i>Gerar Despesas de Funcionários ({{ current_month }}/{{ current_year }})
+                    </button>
+                </form>
+                <a href="{% url 'salons:financial_records_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-2"></i>Ver Todos os Registros
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Últimas Transações -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Últimas Transações</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Categoria</th>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td>{{ transaction.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if transaction.transaction_type == 'income' %}success{% else %}danger{% endif %}">
+                                            {{ transaction.get_transaction_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ transaction.get_category_display_friendly }}</td>
+                                    <td>{{ transaction.description }}</td>
+                                    <td class="text-{% if transaction.transaction_type == 'income' %}success{% else %}danger{% endif %}">
+                                        {% if transaction.transaction_type == 'expense' %}-{% endif %}R$ {{ transaction.amount|floatformat:2 }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhuma transação encontrada.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

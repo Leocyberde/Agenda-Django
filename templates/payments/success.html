@@ -1,0 +1,42 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Pagamento Realizado{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-success">
+                <div class="card-header bg-success text-white text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle fa-4x"></i>
+                    </div>
+                    <h3 class="mb-0">Pagamento Realizado com Sucesso!</h3>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead mb-4">
+                        Obrigado pela sua compra! Seu pagamento está sendo processado.
+                    </p>
+                    
+                    {% if payment_id %}
+                    <div class="alert alert-info">
+                        <strong>ID do Pagamento:</strong> {{ payment_id }}
+                    </div>
+                    {% endif %}
+                    
+                    <p class="mb-4">
+                        Você receberá um e-mail de confirmação em breve. Sua assinatura será ativada automaticamente após a confirmação do pagamento.
+                    </p>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            Ir para o Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
