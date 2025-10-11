@@ -6,8 +6,8 @@ from decimal import Decimal
 import uuid
 
 
-# class Product(models.Model):
-
+class Product(models.Model):
+    """Modelo para produtos de salão com links de afiliados"""
     
     CATEGORY_CHOICES = [
         ('shampoo', 'Shampoo'),
@@ -158,7 +158,7 @@ class PlanPricing(models.Model):
 
 
 
-# class PurchaseTracking(models.Model):
+class PurchaseTracking(models.Model):
     """Rastreia compras feitas através dos links de afiliados"""
     
     STATUS_CHOICES = [
@@ -235,7 +235,7 @@ class PlanPricing(models.Model):
         ]
 
 
-# class CashbackTransaction(models.Model):
+class CashbackTransaction(models.Model):
     """Transações de cashback dos usuários"""
     
     TRANSACTION_TYPES = [
@@ -283,7 +283,7 @@ class PlanPricing(models.Model):
         ordering = ['-created_at']
 
 
-# class UserCashbackBalance(models.Model):
+class UserCashbackBalance(models.Model):
     """Saldo de cashback do usuário"""
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cashback_balance')

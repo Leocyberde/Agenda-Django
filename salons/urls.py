@@ -45,7 +45,7 @@ urlpatterns = [
     path('finances/generate-employee-expenses/', views.generate_employee_expenses, name='generate_employee_expenses'),
     
     # Loja de Produtos
-    # path("store/", views.store_products, name="store_products"),
+    path('store/', views.store_products, name='store_products'),
     
     # Multas de cancelamento
     path('cancellation-fee/<int:fee_id>/mark-paid/', views.mark_cancellation_fee_paid, name='mark_cancellation_fee_paid'),

@@ -9,7 +9,7 @@ from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from .models import PlanPricing # Product, PurchaseTracking, CashbackTransaction, UserCashbackBalancee
+from .models import Product, PlanPricing, PurchaseTracking, CashbackTransaction, UserCashbackBalance
 from accounts.models import UserProfile
 from salons.models import Salon
 from subscriptions.models import Subscription
@@ -431,8 +431,8 @@ def edit_plan_pricing(request, plan_id):
 
 # --- Novas Views para Rastreamento de Afiliados e Cashback ---
 
-# @require_http_methods(["GET"])
-# def track_affiliate_click(request, product_id):
+@require_http_methods(["GET"])
+def track_affiliate_click(request, product_id):
     """Rastreia cliques em links de afiliados e armazena o rastreamento."""
     try:
         product = Product.objects.get(id=product_id)
@@ -501,9 +501,9 @@ def admin_cashback_reports(request):
     return render(request, 'admin_panel/admin_cashback_reports.html', context)
 
 
-# @csrf_exempt
-# @require_http_methods(["POST"])
-# def webhook_confirmation(request):
+@csrf_exempt
+@require_http_methods(["POST"])
+def webhook_purchase_confirmation(request):
     """Webhook para receber confirmações de compra dos sistemas de afiliados"""
     try:
         data = json.loads(request.body)
@@ -582,8 +582,8 @@ def admin_cashback_reports(request):
         }, status=500)
 
 
-# @login_required
-# def user_cashback_dashboard(request):
+@login_required
+def user_cashback_dashboard(request):
     """Dashboard de cashback para o usuário"""
     try:
         balance, created = UserCashbackBalance.objects.get_or_create(
@@ -618,8 +618,8 @@ def admin_cashback_reports(request):
         return redirect('salons:owner_dashboard')
 
 
-# @login_required
-# def request_cashback_payment(request):
+@login_required
+def request_cashback_payment(request):
     """Solicitar pagamento do cashback"""
     if request.method == 'POST':
         try:
@@ -642,9 +642,9 @@ def admin_cashback_reports(request):
     return redirect('admin_panel:cashback_dashboard')
 
 
-# @login_required
-# @user_passes_test(is_admin_user)
-# def admin_cashback_management(request):
+@login_required
+@user_passes_test(is_admin_user)
+def admin_cashback_management(request):
     """Painel administrativo para gerenciar cashbacks"""
     purchases = PurchaseTracking.objects.all().order_by('-created_at')
     transactions = CashbackTransaction.objects.all().order_by('-created_at')

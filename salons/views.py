@@ -15,7 +15,7 @@ from subscriptions.views import subscription_required
 from .models import Salon, Service, Employee, FinancialRecord
 from .forms import SalonForm, ServiceForm, EmployeeForm, EmployeeEditForm, SalonStatusForm
 from appointments.models import Appointment, LinkAgendamento, CancellationFee
-# from admin_panel.models import Product
+from admin_panel.models import Product
 
 @login_required
 def create_salon(request):
@@ -131,7 +131,7 @@ def owner_dashboard(request):
     financial_summary['net_result'] = financial_summary['current_income'] - (financial_summary['current_expenses'] + financial_summary['employee_costs'])
 
     # Produtos em destaque com cashback para o dashboard
-    # featured_products = Product.objects.filter(is_active=True, is_featured=True).order_by("-created_at")[:5]
+    featured_products = Product.objects.filter(is_active=True, is_featured=True).order_by('-created_at')[:5]
 
     # Multas de cancelamento pendentes
     pending_fees = CancellationFee.objects.filter(
@@ -145,7 +145,7 @@ def owner_dashboard(request):
         'upcoming_appointments': upcoming_appointments,
         'subscription': subscription,
         'financial_summary': financial_summary,
-        # 'featured_products': featured_products,  # Mudou de suggested_products para featured_products
+        'featured_products': featured_products,  # Mudou de suggested_products para featured_products
         'pending_fees': pending_fees,
     })
 
@@ -1034,8 +1034,8 @@ def generate_employee_expenses(request):
 
 # ============== LOJA DE PRODUTOS ==============
 
-# @subscription_required
-# def store_products(request):
+@subscription_required
+def store_products(request):
     """Página da loja com todos os produtos disponíveis"""
     salon = request.user.salon
 
